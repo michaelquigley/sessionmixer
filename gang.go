@@ -276,9 +276,9 @@ func (gf *GangedFader) GetLevelColor() *imgui.Vec4 {
 		return nil
 	}
 
-	// Zero level = black
+	// When level is 0, don't set a color (use theme default)
 	if level == 0 {
-		return &imgui.Vec4{X: 0, Y: 0, Z: 0, W: 1.0}
+		return nil
 	}
 
 	// Normalize to 0.0-1.0 using logarithmic (dB) scale
@@ -308,10 +308,10 @@ func (gf *GangedFader) GetLevelColor() *imgui.Vec4 {
 	}
 
 	// Compute color using HSV
-	// 0%: dark green (H=120°, S=1, V=0.3)
-	// 50%: bright green (H=120°, S=1, V=0.6)
-	// 80%: yellow (H=60°, S=1, V=0.8)
-	// 100%: red (H=0°, S=1, V=1.0)
+	// 0%: dark green (H=120, S=1, V=0.3)
+	// 50%: bright green (H=120, S=1, V=0.6)
+	// 80%: yellow (H=60, S=1, V=0.8)
+	// 100%: red (H=0, S=1, V=1.0)
 	var h, s, v float32
 	s = 1.0
 
@@ -322,12 +322,12 @@ func (gf *GangedFader) GetLevelColor() *imgui.Vec4 {
 	} else if normalized <= 0.8 {
 		// 50-80%: green to yellow (H from 120 to 60)
 		t := (normalized - 0.5) / 0.3
-		h = (120.0 - t*60.0) / 360.0 // 120° to 60°
+		h = (120.0 - t*60.0) / 360.0 // 120 to 60
 		v = 0.6 + t*0.2              // 0.6 to 0.8
 	} else {
 		// 80-100%: yellow to red (H from 60 to 0)
 		t := (normalized - 0.8) / 0.2
-		h = (60.0 - t*60.0) / 360.0 // 60° to 0°
+		h = (60.0 - t*60.0) / 360.0 // 60 to 0
 		v = 0.8 + t*0.2             // 0.8 to 1.0
 	}
 
