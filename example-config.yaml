@@ -1,0 +1,32 @@
+# sessionmixer configuration example
+# This file demonstrates how to configure a custom mixer control surface
+# for Focusrite Scarlett audio interfaces
+
+# ALSA card number (usually 0 for the first Scarlett device)
+card: 1
+
+# Ganged controls (one fader controls multiple hardware controls)
+gang_controls:
+  - name: "Mains"
+    controls:
+      - "Analogue 1 Playback Volume"
+    unit: "db"
+    taper_db: 72
+
+  - name: "MainMix"
+    controls:
+      - "Mix A Input 01 Playback Volume"
+      - "Mix B Input 02 Playback Volume"
+    levels:
+      - "pcm:0.0/Level Meter[15]"
+      - "pcm:0.0/Level Meter[16]"
+    unit: "db"
+    taper_db: 72
+
+# Notes:
+# - Control names must match exactly what ALSA reports (case-sensitive)
+# - Use `scarlettctl list` to see available controls for your device
+# - Ganged controls are displayed as a single fader
+# - Individual controls and ganged controls can be mixed
+# - taper_db: if set, uses DecibelTaper with specified dB range (e.g., 72 for -60dB to +12dB)
+#             if omitted or 0, uses LinearTaper (default)

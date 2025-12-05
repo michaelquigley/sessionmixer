@@ -1,0 +1,7 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=SessionMixer
+Exec=/home/michael/local/sessionmixer/bin/sessionmixer run
+Icon=/home/michael/Repos/q/products/sessionmixer/sessionmixer.svg
+Terminal=false
+Type=Application
