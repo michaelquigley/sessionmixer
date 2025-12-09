@@ -4,7 +4,7 @@ A lightweight, configurable desktop mixer for controlling cue mixes and audio ro
 
 ## Demo
 
-![sessionmixer controlling a Focusrite Scarlett interface with real-time level metering](docs/capture.gif)
+![sessionmixer controlling a Focusrite Scarlett interface with real-time level metering](docs/screenshot.png)
 
 *sessionmixer controlling a Focusrite Scarlett interface with real-time level metering*
 
