@@ -30,7 +30,7 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 ## Requirements
 
 - **Linux** with ALSA
-- **Go 1.21+** (for building from source)
+- **Go 1.24+** (for building from source)
 - A supported audio interface
 
 ### Dependencies
@@ -111,9 +111,6 @@ scarlettctl list
 ```bash
 # Run the mixer
 ./sessionmixer run
-
-# With verbose logging
-./sessionmixer run -v
 ```
 
 ### Controls
