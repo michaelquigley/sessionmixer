@@ -55,12 +55,20 @@ type GangedFader struct {
 	levelControls []*scarlettctl.Control
 	levelMin      int64
 	levelMax      int64
+
+	// Optional VU meter
+	vuMeter *dfx.VUMeter
+
+	// Track coloring enabled
+	showTrackColor bool
 }
 
 // NewGangedFader creates a new ganged fader from multiple channels
 // levelControls are optional read-only controls for signal level indication
 // taperDb specifies the dB range for DecibelTaper; if 0, LinearTaper is used
-func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, levelControls []*scarlettctl.Control, taperDb float32) (*GangedFader, error) {
+// showVUMeter enables the VU meter display (requires levelControls)
+// showTrackColor enables track coloring based on level (requires levelControls)
+func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, levelControls []*scarlettctl.Control, taperDb float32, showVUMeter, showTrackColor bool) (*GangedFader, error) {
 	if len(channels) < 1 {
 		return nil, fmt.Errorf("ganged fader must have at least 1 channels")
 	}
@@ -75,21 +83,36 @@ func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, 
 	initialValue := channels[0].GetCurrentValue()
 
 	gf := &GangedFader{
-		name:          name,
-		unit:          unit,
-		mode:          mode,
-		channels:      channels,
-		lastValue:     initialValue,
-		min:           min,
-		max:           max,
-		taperDb:       taperDb,
-		levelControls: levelControls,
+		name:           name,
+		unit:           unit,
+		mode:           mode,
+		channels:       channels,
+		lastValue:      initialValue,
+		min:            min,
+		max:            max,
+		taperDb:        taperDb,
+		levelControls:  levelControls,
+		showTrackColor: showTrackColor,
 	}
 
 	// Get level control range from first level control (if any)
 	if len(levelControls) > 0 {
 		gf.levelMin = levelControls[0].Min
 		gf.levelMax = levelControls[0].Max
+	}
+
+	// Create VU meter if enabled and level controls exist
+	if showVUMeter && len(levelControls) > 0 {
+		gf.vuMeter = dfx.NewVUMeter(len(levelControls))
+		gf.vuMeter.SegmentCount = 70
+		gf.vuMeter.Height = 300 // Match fader height
+
+		// Number the channels
+		labels := make([]string, len(levelControls))
+		for i := range labels {
+			labels[i] = fmt.Sprintf("%d", i+1)
+		}
+		gf.vuMeter.SetLabels(labels)
 	}
 
 	// Configure fader parameters
@@ -335,4 +358,62 @@ func (gf *GangedFader) GetLevelColor() *imgui.Vec4 {
 	imgui.ColorConvertHSVtoRGB(h, s, v, &r, &g, &b)
 
 	return &imgui.Vec4{X: r, Y: g, Z: b, W: 1.0}
+}
+
+// HasVUMeter returns true if VU meter is enabled
+func (gf *GangedFader) HasVUMeter() bool {
+	return gf.vuMeter != nil
+}
+
+// ShowTrackColor returns true if track coloring is enabled
+func (gf *GangedFader) ShowTrackColor() bool {
+	return gf.showTrackColor
+}
+
+// GetVUMeter returns the VU meter (or nil if not enabled)
+func (gf *GangedFader) GetVUMeter() *dfx.VUMeter {
+	return gf.vuMeter
+}
+
+// GetNormalizedLevels returns all level values normalized to 0.0-1.0 using dB scale
+func (gf *GangedFader) GetNormalizedLevels() []float32 {
+	if len(gf.levelControls) == 0 {
+		return nil
+	}
+
+	levels := make([]float32, len(gf.levelControls))
+	for i, ctl := range gf.levelControls {
+		val, err := ctl.GetValue()
+		if err != nil {
+			levels[i] = 0
+			continue
+		}
+
+		// Normalize to 0.0-1.0 using logarithmic (dB) scale
+		// Same logic as GetLevelColor()
+		if val <= gf.levelMin || gf.levelMax <= 0 {
+			levels[i] = 0
+			continue
+		}
+
+		// Convert to dB scale: 20 * log10(level / max)
+		ratio := float64(val) / float64(gf.levelMax)
+		db := 20.0 * math.Log10(ratio)
+
+		// Use 96 dB range for normalization
+		const dbRange = 96.0
+		if db < -dbRange {
+			db = -dbRange
+		}
+		normalized := float32((db + dbRange) / dbRange)
+
+		if normalized < 0 {
+			normalized = 0
+		} else if normalized > 1 {
+			normalized = 1
+		}
+		levels[i] = normalized
+	}
+
+	return levels
 }

@@ -5,8 +5,8 @@ go 1.25.4
 require (
 	github.com/AllenDang/cimgui-go v1.4.0
 	github.com/charmbracelet/fang v0.4.4
-	github.com/michaelquigley/df v0.3.5
-	github.com/michaelquigley/dfx v0.0.0
+	github.com/michaelquigley/df v0.3.7
+	github.com/michaelquigley/dfx v0.0.4
 	github.com/michaelquigley/scarlettctl v0.0.0-20251204203324-0ac833b9560b
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.10.1

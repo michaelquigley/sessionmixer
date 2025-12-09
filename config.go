@@ -13,11 +13,13 @@ type Config struct {
 }
 
 type GangControl struct {
-	Name     string   `dd:"+required"`
-	Controls []string `dd:"+required"`
-	Unit     string
-	TaperDb  float32  // If > 0, use DecibelTaper(TaperDb); otherwise LinearTaper
-	Levels   []string // Optional level control names for signal indication
+	Name           string   `dd:"+required"`
+	Controls       []string `dd:"+required"`
+	Unit           string
+	TaperDb        float32  // If > 0, use DecibelTaper(TaperDb); otherwise LinearTaper
+	Levels         []string // Optional level control names for signal indication
+	ShowVUMeter    bool     // Enable VUMeter display (requires Levels)
+	ShowTrackColor bool     // Enable track coloring based on level (requires Levels)
 }
 
 func LoadMainConfig() (*Config, error) {
@@ -30,5 +32,5 @@ func LoadMainConfig() (*Config, error) {
 }
 
 func LoadConfig(path string) (*Config, error) {
-	return dd.NewFromYAML[Config](path)
+	return dd.NewYAMLFile[Config](path)
 }

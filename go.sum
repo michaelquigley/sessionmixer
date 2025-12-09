@@ -37,8 +37,8 @@ github.com/lucasb-eyer/go-colorful v1.3.0 h1:2/yBRLdWBZKrf7gB40FoiKfAWYQ0lqNcbuQ
 github.com/lucasb-eyer/go-colorful v1.3.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/mattn/go-runewidth v0.0.19 h1:v++JhqYnZuu5jSKrk9RbgF5v4CGUjqRfBm05byFGLdw=
 github.com/mattn/go-runewidth v0.0.19/go.mod h1:XBkDxAl56ILZc9knddidhrOlY5R/pDhgLpndooCuJAs=
-github.com/michaelquigley/df v0.3.5 h1:KerdkTLSNpHFDjcuFABIPg90mIRgTOMnmLLn2Nk+QDg=
-github.com/michaelquigley/df v0.3.5/go.mod h1:Ym3uLqdbI6DxhqzLLtAzQ2ry7KfPKCjfXEgoOL23xfI=
+github.com/michaelquigley/df v0.3.7 h1:rWIUReMTBweg1qr1K9JnGxUeEq2WyvImxaKC0Qob6bg=
+github.com/michaelquigley/df v0.3.7/go.mod h1:Ym3uLqdbI6DxhqzLLtAzQ2ry7KfPKCjfXEgoOL23xfI=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=
 github.com/muesli/cancelreader v0.2.2/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
 github.com/muesli/mango v0.1.0 h1:DZQK45d2gGbql1arsYA4vfg4d7I9Hfx5rX/GCmzsAvI=

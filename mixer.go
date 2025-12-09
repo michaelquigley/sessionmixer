@@ -28,7 +28,7 @@ func NewSessionMixer(card *scarlettctl.Card, config *Config, gangs []*GangedFade
 
 // Draw renders the mixer UI using dfx immediate mode
 // This is called every frame by the dfx application
-func (sm *SessionMixer) Draw(_ *dfx.State) {
+func (sm *SessionMixer) Draw(state *dfx.State) {
 	// Calculate total number of faders (individual channels + gangs)
 	totalFaders := len(sm.gangs)
 
@@ -48,8 +48,19 @@ func (sm *SessionMixer) Draw(_ *dfx.State) {
 		imgui.WindowFlagsHorizontalScrollbar)
 
 	// Use table layout for stable column widths
-	faderWidth := float32(80.0) // Width per fader column
-	contentWidth := float32(totalFaders) * faderWidth
+	// Calculate column widths - wider for gangs with VU meters
+	baseFaderWidth := float32(80.0)
+	var contentWidth float32
+	columnWidths := make([]float32, totalFaders)
+	for i, gang := range sm.gangs {
+		if gang.HasVUMeter() {
+			// Fader (60) + spacing (8) + VU meter width + padding (16)
+			columnWidths[i] = 60 + 8 + gang.GetVUMeter().Width() + 16
+		} else {
+			columnWidths[i] = baseFaderWidth
+		}
+		contentWidth += columnWidths[i]
+	}
 
 	imgui.BeginTableV("mixer_table", int32(totalFaders),
 		imgui.TableFlagsNone,
@@ -58,7 +69,7 @@ func (sm *SessionMixer) Draw(_ *dfx.State) {
 	// Setup fixed-width columns
 	for i := 0; i < totalFaders; i++ {
 		imgui.TableSetupColumnV(fmt.Sprintf("##col%d", i),
-			imgui.TableColumnFlagsWidthFixed, faderWidth, 0)
+			imgui.TableColumnFlagsWidthFixed, columnWidths[i], 0)
 	}
 
 	// Row 1: Channel labels
@@ -77,9 +88,9 @@ func (sm *SessionMixer) Draw(_ *dfx.State) {
 
 		currentValue := int(gang.GetCurrentValue())
 
-		// Get params and set TrackColor if gang has level controls
+		// Get params and set TrackColor if enabled
 		params := gang.GetParams()
-		if gang.HasLevels() {
+		if gang.HasLevels() && gang.ShowTrackColor() {
 			params.TrackColor = gang.GetLevelColor()
 		}
 
@@ -94,6 +105,14 @@ func (sm *SessionMixer) Draw(_ *dfx.State) {
 		if changed {
 			// IMMEDIATE write to all ganged channels
 			gang.HandleUIChange(int64(newValue))
+		}
+
+		// Draw VU meter to the right if enabled
+		if gang.HasVUMeter() {
+			imgui.SameLine()
+			levels := gang.GetNormalizedLevels()
+			gang.GetVUMeter().SetLevels(levels)
+			gang.GetVUMeter().Draw(state)
 		}
 	}
 

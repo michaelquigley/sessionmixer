@@ -63,7 +63,7 @@ func (cm *ControlMapper) LoadGangs() ([]*GangedFader, error) {
 		}
 
 		// Create ganged fader (mirror mode only for now)
-		gang, err := NewGangedFader(gangControl.Name, gangControl.Unit, GangModeMirror, gangChannels, levelControls, gangControl.TaperDb)
+		gang, err := NewGangedFader(gangControl.Name, gangControl.Unit, GangModeMirror, gangChannels, levelControls, gangControl.TaperDb, gangControl.ShowVUMeter, gangControl.ShowTrackColor)
 		if err != nil {
 			return nil, fmt.Errorf("gang %d (%s): failed to create ganged fader: %w", i, gangControl.Name, err)
 		}
