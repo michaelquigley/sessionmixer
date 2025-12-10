@@ -104,7 +104,8 @@ func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, 
 	// Create VU meter if enabled and level controls exist
 	if showVUMeter && len(levelControls) > 0 {
 		gf.vuMeter = dfx.NewVUMeter(len(levelControls))
-		gf.vuMeter.SegmentCount = 70
+		gf.vuMeter.SegmentCount = 141
+		gf.vuMeter.SegmentGap = 1
 		gf.vuMeter.Height = 300 // Match fader height
 
 		// Number the channels
