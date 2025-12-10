@@ -106,7 +106,7 @@ func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, 
 		gf.vuMeter = dfx.NewVUMeter(len(levelControls))
 		gf.vuMeter.SegmentCount = 141
 		gf.vuMeter.SegmentGap = 1
-		gf.vuMeter.Height = 300 // Match fader height
+		gf.vuMeter.Height = 301 // Match fader height
 
 		// Number the channels
 		labels := make([]string, len(levelControls))
