@@ -56,6 +56,9 @@ type GangedFader struct {
 	levelMin      int64
 	levelMax      int64
 
+	// Level smoothing buffers (one per level control)
+	levelBuffers []*RingBuffer[int64]
+
 	// Optional VU meter
 	vuMeter *dfx.VUMeter
 
@@ -68,7 +71,8 @@ type GangedFader struct {
 // taperDb specifies the dB range for DecibelTaper; if 0, LinearTaper is used
 // showVUMeter enables the VU meter display (requires levelControls)
 // showTrackColor enables track coloring based on level (requires levelControls)
-func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, levelControls []*scarlettctl.Control, taperDb float32, showVUMeter, showTrackColor bool) (*GangedFader, error) {
+// smoothingSamples specifies the number of samples to average for level smoothing (0 = disabled)
+func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, levelControls []*scarlettctl.Control, taperDb float32, showVUMeter, showTrackColor bool, smoothingSamples int) (*GangedFader, error) {
 	if len(channels) < 1 {
 		return nil, fmt.Errorf("ganged fader must have at least 1 channels")
 	}
@@ -99,6 +103,14 @@ func NewGangedFader(name, unit string, mode GangMode, channels []*MixerChannel, 
 	if len(levelControls) > 0 {
 		gf.levelMin = levelControls[0].Min
 		gf.levelMax = levelControls[0].Max
+	}
+
+	// Create level smoothing buffers if enabled
+	if smoothingSamples > 1 && len(levelControls) > 0 {
+		gf.levelBuffers = make([]*RingBuffer[int64], len(levelControls))
+		for i := range gf.levelBuffers {
+			gf.levelBuffers[i] = NewRingBuffer[int64](smoothingSamples)
+		}
 	}
 
 	// Create VU meter if enabled and level controls exist
@@ -274,6 +286,7 @@ func (gf *GangedFader) HasLevels() bool {
 }
 
 // GetMaxLevel reads all level controls and returns the maximum value
+// If smoothing is enabled, returns the max of averaged values
 // Returns the level value and true if successful, or 0 and false if no levels configured
 func (gf *GangedFader) GetMaxLevel() (int64, bool) {
 	if len(gf.levelControls) == 0 {
@@ -281,9 +294,19 @@ func (gf *GangedFader) GetMaxLevel() (int64, bool) {
 	}
 
 	var maxLevel int64
-	for _, ctl := range gf.levelControls {
+	for i, ctl := range gf.levelControls {
 		val, err := ctl.GetValue()
-		if err == nil && val > maxLevel {
+		if err != nil {
+			continue
+		}
+
+		// Push to buffer and get average if smoothing is enabled
+		if gf.levelBuffers != nil {
+			gf.levelBuffers[i].Push(val)
+			val = gf.levelBuffers[i].Average()
+		}
+
+		if val > maxLevel {
 			maxLevel = val
 		}
 	}
@@ -377,6 +400,7 @@ func (gf *GangedFader) GetVUMeter() *dfx.VUMeter {
 }
 
 // GetNormalizedLevels returns all level values normalized to 0.0-1.0 using dB scale
+// If smoothing is enabled, returns averaged values
 func (gf *GangedFader) GetNormalizedLevels() []float32 {
 	if len(gf.levelControls) == 0 {
 		return nil
@@ -388,6 +412,12 @@ func (gf *GangedFader) GetNormalizedLevels() []float32 {
 		if err != nil {
 			levels[i] = 0
 			continue
+		}
+
+		// Push to buffer and get average if smoothing is enabled
+		if gf.levelBuffers != nil {
+			gf.levelBuffers[i].Push(val)
+			val = gf.levelBuffers[i].Average()
 		}
 
 		// Normalize to 0.0-1.0 using logarithmic (dB) scale

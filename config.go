@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Card         int `dd:"+required"`
-	GangControls []GangControl
+	Card           int `dd:"+required"`
+	LevelSmoothing int // Number of samples to average for level meters (0 = disabled)
+	GangControls   []GangControl
 }
 
 type GangControl struct {
