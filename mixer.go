@@ -64,7 +64,7 @@ func (sm *SessionMixer) Draw(state *dfx.State) {
 
 	imgui.BeginTableV("mixer_table", int32(totalFaders),
 		imgui.TableFlagsNone,
-		imgui.Vec2{X: contentWidth, Y: 0}, 0.0)
+		imgui.Vec2{X: contentWidth + 50, Y: 0}, 0.0)
 
 	// Setup fixed-width columns
 	for i := 0; i < totalFaders; i++ {

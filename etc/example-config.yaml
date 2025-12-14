@@ -5,6 +5,10 @@
 # ALSA card number (usually 0 for the first Scarlett device)
 card: 1
 
+# Use a ring buffer for VU meter smoothing. Specified in a number of samples.
+# Setting to `0` or omitting this configuration disables VU smoothing.
+level_smoothing: 8
+
 # Ganged controls (one fader controls multiple hardware controls)
 gang_controls:
   - name: "Mains"
@@ -20,6 +24,8 @@ gang_controls:
     levels:
       - "pcm:0.0/Level Meter[15]"
       - "pcm:0.0/Level Meter[16]"
+    show_vu_meter: true      # Display VU meter bars alongside fader
+    show_track_color: true   # Color fader track based on signal level
     unit: "db"
     taper_db: 72
 
@@ -30,3 +36,6 @@ gang_controls:
 # - Individual controls and ganged controls can be mixed
 # - taper_db: if set, uses DecibelTaper with specified dB range (e.g., 72 for -60dB to +12dB)
 #             if omitted or 0, uses LinearTaper (default)
+# - show_vu_meter: displays vertical VU meter bars alongside the fader (requires levels)
+# - show_track_color: colors the fader track background based on signal level (requires levels)
+# - level_smoothing: number of samples to average for smoother VU meter response (0 = disabled)

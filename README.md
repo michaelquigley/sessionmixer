@@ -23,7 +23,10 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 
 - **Ganged Faders** - Control multiple hardware channels with a single fader (e.g., stereo pairs)
 - **Configurable Tapers** - Choose between logarithmic (dB) or linear fader response
-- **Level Metering** - Real-time signal levels displayed as color-coded fader backgrounds
+- **Level Metering** - Real-time signal visualization with two modes:
+  - **VU Meters** - Vertical meter bars alongside faders
+  - **Track Color** - Fader background changes color based on signal level
+- **Level Smoothing** - Configurable ring buffer averaging for smooth meter response
 - **Bidirectional Sync** - Changes made externally (other software, hardware controls) are reflected in the UI
 - **YAML Configuration** - Simple, human-readable configuration files
 
@@ -65,6 +68,9 @@ sessionmixer uses a YAML configuration file located at:
 # ALSA card number (use `aplay -l` to find your device)
 card: 1
 
+# VU meter smoothing (number of samples to average, 0 = disabled)
+level_smoothing: 8
+
 # Define your faders
 gang_controls:
   # A single-channel fader
@@ -74,7 +80,7 @@ gang_controls:
     unit: "db"
     taper_db: 72
 
-  # A stereo gang with level metering
+  # A stereo gang with VU meters and track coloring
   - name: "Headphones"
     controls:
       - "Mix A Input 01 Playback Volume"
@@ -82,21 +88,33 @@ gang_controls:
     levels:
       - "pcm:0.0/Level Meter[15]"
       - "pcm:0.0/Level Meter[16]"
+    show_vu_meter: true
+    show_track_color: true
     unit: "db"
     taper_db: 72
 ```
 
 ### Configuration Reference
 
+**Root Fields:**
+
 | Field | Description |
 |-------|-------------|
 | `card` | ALSA card number for your interface |
+| `level_smoothing` | Number of samples to average for level meters (0 = disabled) |
 | `gang_controls` | List of fader definitions |
+
+**Gang Control Fields:**
+
+| Field | Description |
+|-------|-------------|
 | `name` | Display label for the fader |
 | `controls` | ALSA control names to gang together |
 | `unit` | Display format: `"db"` or `"raw"` |
 | `taper_db` | dB range for logarithmic taper (omit for linear) |
-| `levels` | Optional: level meter controls for signal display |
+| `levels` | Level meter control names for signal visualization |
+| `show_vu_meter` | Enable VU meter bars (requires `levels`) |
+| `show_track_color` | Enable track coloring based on level (requires `levels`) |
 
 ### Finding Control Names
 
@@ -117,10 +135,10 @@ scarlettctl list
 
 - **Drag faders** to adjust levels
 - Fader values sync bidirectionally with hardware
-- Level meters (when configured) show real-time signal levels:
-  - Green = normal levels
-  - Yellow = approaching peak
-  - Red = high levels
+- Level visualization (when `levels` are configured):
+  - **VU Meters** - Vertical bar meters beside faders showing per-channel levels
+  - **Track Color** - Fader background color indicates signal level
+  - Color gradient: Green (normal) → Yellow (approaching peak) → Red (high levels)
 
 ## License
 

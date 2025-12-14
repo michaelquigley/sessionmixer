@@ -1,15 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
-  <!-- Minimal symbolic mixer - three sliders -->
+  <!-- Futuristic angular mixer -->
   
-  <!-- Left channel -->
-  <line x1="3" y1="2" x2="3" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-  <circle cx="3" cy="5" r="1.5" fill="currentColor"/>
+  <!-- Angular frame -->
+  <path d="M1 2.5 L2 1 L14 1 L15 2.5 L15 13.5 L14 15 L2 15 L1 13.5 Z" 
+        fill="currentColor" opacity="0.08" stroke="currentColor" stroke-width="0.5"/>
   
-  <!-- Center channel -->
-  <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-  <circle cx="8" cy="10" r="1.5" fill="currentColor"/>
+  <!-- Tech detail lines -->
+  <line x1="2" y1="3" x2="14" y2="3" stroke="currentColor" stroke-width="0.3" opacity="0.4"/>
   
-  <!-- Right channel -->
-  <line x1="13" y1="2" x2="13" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-  <circle cx="13" cy="7" r="1.5" fill="currentColor"/>
+  <!-- Stereo VU meter bar (left) -->
+  <rect x="2.5" y="4" width="5" height="1.5" rx="0.25" fill="currentColor" opacity="0.15"/>
+  <rect x="2.75" y="4.25" width="1" height="1" rx="0.15" fill="currentColor"/>
+  <rect x="4" y="4.25" width="1" height="1" rx="0.15" fill="currentColor" opacity="0.8"/>
+  <rect x="5.25" y="4.25" width="1" height="1" rx="0.15" fill="currentColor" opacity="0.4"/>
+  
+  <!-- Stereo VU meter bar (right) -->
+  <rect x="8.5" y="4" width="5" height="1.5" rx="0.25" fill="currentColor" opacity="0.15"/>
+  <rect x="8.75" y="4.25" width="1" height="1" rx="0.15" fill="currentColor"/>
+  <rect x="10" y="4.25" width="1" height="1" rx="0.15" fill="currentColor"/>
+  <rect x="11.25" y="4.25" width="1" height="1" rx="0.15" fill="currentColor" opacity="0.5"/>
+  
+  <!-- Fader channels with glow effect -->
+  <!-- Channel 1 -->
+  <rect x="2.5" y="6.5" width="1.2" height="7" rx="0.3" fill="currentColor" opacity="0.2"/>
+  <rect x="2.2" y="7.5" width="1.8" height="1.2" rx="0.2" fill="currentColor"/>
+  <circle cx="3.1" cy="8.1" r="0.25" fill="currentColor" opacity="0.3"/>
+  
+  <!-- Channel 2 -->
+  <rect x="5.4" y="6.5" width="1.2" height="7" rx="0.3" fill="currentColor" opacity="0.2"/>
+  <rect x="5.1" y="10" width="1.8" height="1.2" rx="0.2" fill="currentColor"/>
+  <circle cx="6" cy="10.6" r="0.25" fill="currentColor" opacity="0.3"/>
+  
+  <!-- Channel 3 -->
+  <rect x="9.4" y="6.5" width="1.2" height="7" rx="0.3" fill="currentColor" opacity="0.2"/>
+  <rect x="9.1" y="8.5" width="1.8" height="1.2" rx="0.2" fill="currentColor"/>
+  <circle cx="10" cy="9.1" r="0.25" fill="currentColor" opacity="0.3"/>
+  
+  <!-- Channel 4 -->
+  <rect x="12.3" y="6.5" width="1.2" height="7" rx="0.3" fill="currentColor" opacity="0.2"/>
+  <rect x="12" y="11.5" width="1.8" height="1.2" rx="0.2" fill="currentColor"/>
+  <circle cx="12.9" cy="12.1" r="0.25" fill="currentColor" opacity="0.3"/>
 </svg>

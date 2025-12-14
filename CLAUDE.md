@@ -21,12 +21,19 @@
    - Configured per-gang via `taper_db` field in config
 
 3. **Level Metering**
-   - Optional signal level display on fader track background
+   - Two visualization modes (can be used independently or together):
+     - **Track Color** (`show_track_color`) - fader track background changes color based on signal level
+     - **VU Meter** (`show_vu_meter`) - separate vertical meter bars alongside faders
    - Logarithmic (dB) scale for sensitivity at low levels (96 dB range)
    - Color gradient: black (zero) -> dark green -> bright green -> yellow -> red (high)
-   - Configured via `levels` field in gang config
+   - Configured via `levels` field in gang config (lists the level meter controls to read)
 
-4. **Bidirectional Update Strategy**
+4. **Level Smoothing**
+   - Optional ring buffer averaging for smoother meter response
+   - Reduces visual jitter in VU meters and track color
+   - Configured via `level_smoothing` field at config root (number of samples to average)
+
+5. **Bidirectional Update Strategy**
    - Implemented per docs/BIDIRECTIONAL_UPDATE_STRATEGY.md
    - Hardware as single source of truth
    - Value equality checks prevent feedback loops
@@ -41,7 +48,9 @@
 - `mapper.go` - Maps config to hardware controls
 - `mixer.go` - Main GUI component (horizontal fader bank)
 - `monitor.go` - Event monitoring for hardware changes
+- `ring_buffer.go` - Generic circular buffer for level smoothing
 - `cmd/sessionmixer/` - Application entry point and commands
+- `etc/example-config.yaml` - Example configuration file
 
 ### Architecture
 
@@ -131,6 +140,7 @@ Set params.TrackColor
 **Structure:**
 ```yaml
 card: 1  # ALSA card number
+level_smoothing: 8  # Ring buffer size for VU/track color smoothing (0 = disabled)
 
 gang_controls:
   - name: "Mains"
@@ -146,16 +156,24 @@ gang_controls:
     levels:
       - "pcm:0.0/Level Meter[15]"
       - "pcm:0.0/Level Meter[16]"
+    show_vu_meter: true
+    show_track_color: true
     unit: "db"
     taper_db: 72
 ```
 
-**Fields:**
+**Root Fields:**
+- `card` - ALSA card number for your interface
+- `level_smoothing` - Number of samples to average for level meters (0 = disabled)
+
+**Gang Control Fields:**
 - `name` - Display name for the fader
 - `controls` - List of ALSA control names to gang together
 - `unit` - Display unit: `"db"` (logarithmic dB display) or `"raw"` (integer value)
 - `taper_db` - If > 0, use DecibelTaper with specified dB range; otherwise LinearTaper
 - `levels` - Optional list of read-only level meter controls for signal visualization
+- `show_vu_meter` - Enable VU meter bars (requires `levels`)
+- `show_track_color` - Enable track coloring based on level (requires `levels`)
 
 ### Dependencies
 
@@ -176,11 +194,17 @@ go build ./cmd/sessionmixer
 ./sessionmixer run
 ```
 
+## Current Development
+
+### Multiple Mixes and Groups (In Progress)
+- **Mix support** - Define multiple mixes (e.g., "Headphones", "Monitors", "Cue 1")
+- **Groups** - Organize faders into logical groups per mix
+- **Per-mix customization** - Different control layouts for different workflows
+
 ## Next Steps
 
 ### High Priority
 1. **Expand level metering visualization options**
-   - Separate meter bars alongside faders
    - Peak hold indicators
    - RMS vs peak display modes
 
@@ -240,6 +264,22 @@ The level meter color gradient in `gang.go` uses HSV color space:
 - 80-100%: yellow to red (shift hue, max brightness)
 
 The 96 dB dynamic range provides good sensitivity at low signal levels.
+
+### Level Smoothing
+
+The `RingBuffer[T]` generic type in `ring_buffer.go` provides smoothing for level meters:
+- Fixed-size circular buffer that overwrites oldest values
+- Simple averaging for smooth meter response
+- Created per-level-control when `level_smoothing > 1` in config
+- Typical values: 4-16 samples depending on desired responsiveness
+
+### VU Meter Configuration
+
+VU meters are rendered using `dfx.VUMeter`:
+- 141 segments with 1-pixel gap for smooth gradient appearance
+- Height of 301px to match 300px fader height
+- One channel per level control (labeled 1-N)
+- Column width dynamically adjusts when VU meters are present
 
 ## References
 
