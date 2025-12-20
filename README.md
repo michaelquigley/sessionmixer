@@ -2,6 +2,10 @@
 
 A lightweight, configurable desktop mixer for controlling cue mixes and audio routing on audio interfaces with onboard mixing.
 
+## Project Roadmap
+
+Take a look at the [project roadmap board](https://github.com/users/michaelquigley/projects/3/views/1) to better understand what's on deck for sessionmixer.
+
 ## Demo
 
 ![sessionmixer controlling a Focusrite Scarlett interface with real-time level metering](docs/screenshot.png)
