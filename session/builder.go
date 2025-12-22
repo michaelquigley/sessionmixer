@@ -117,20 +117,34 @@ func (b *SessionBuilder) resolveCueMix(cfg *CueMixConfig, session *Session) (*Cu
 		}
 	}
 
-	// Resolve output ports
-	for _, portID := range cfg.Outputs {
-		port := b.device.GetPort(portID)
-		if port == nil {
-			return nil, fmt.Errorf("output port %q not found", portID)
-		}
-		cueMix.Outputs = append(cueMix.Outputs, port)
+	// Resolve output ports (supports both device names and raw port IDs)
+	for _, output := range cfg.Outputs {
+		// Check if this is a device name
+		if device := session.GetDevice(output); device != nil {
+			// Expand device to its ports
+			for _, port := range device.Ports {
+				cueMix.Outputs = append(cueMix.Outputs, port)
 
-		// Get routing endpoint for this output
-		endpoint := b.device.GetRoutingEndpointForPort(port)
-		if endpoint == nil {
-			return nil, fmt.Errorf("no routing endpoint for output %q", portID)
+				endpoint := b.device.GetRoutingEndpointForPort(port)
+				if endpoint == nil {
+					return nil, fmt.Errorf("no routing endpoint for output %q (from device %q)", port.ID, output)
+				}
+				cueMix.Endpoints = append(cueMix.Endpoints, endpoint)
+			}
+		} else {
+			// Treat as raw port ID
+			port := b.device.GetPort(output)
+			if port == nil {
+				return nil, fmt.Errorf("output %q not found (not a device name or port ID)", output)
+			}
+			cueMix.Outputs = append(cueMix.Outputs, port)
+
+			endpoint := b.device.GetRoutingEndpointForPort(port)
+			if endpoint == nil {
+				return nil, fmt.Errorf("no routing endpoint for output %q", output)
+			}
+			cueMix.Endpoints = append(cueMix.Endpoints, endpoint)
 		}
-		cueMix.Endpoints = append(cueMix.Endpoints, endpoint)
 	}
 
 	// Create device faders
