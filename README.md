@@ -25,6 +25,8 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 
 ## Features
 
+- **Automatic Device Detection** - Detects your Scarlett interface and loads the appropriate device profile
+- **Device Topology Discovery** - Inspect your interface's ports, mixes, routing, and level meters
 - **Ganged Faders** - Control multiple hardware channels with a single fader (e.g., stereo pairs)
 - **Configurable Tapers** - Choose between logarithmic (dB) or linear fader response
 - **Level Metering** - Real-time signal visualization with two modes:
@@ -133,6 +135,18 @@ scarlettctl list
 ```bash
 # Run the mixer
 ./sessionmixer run
+
+# Inspect device topology
+./sessionmixer topology
+
+# Show routing endpoints
+./sessionmixer topology --routing
+
+# Show mixes
+./sessionmixer topology --mixes
+
+# Show level meters
+./sessionmixer topology --meters
 ```
 
 ### Controls
