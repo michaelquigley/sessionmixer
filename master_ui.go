@@ -115,6 +115,9 @@ func (ui *MasterUI) DrawControls(state *dfx.State) {
 	})
 
 	buttonLabel := fonts.ICON_VOLUME_MUTE
+	if muted {
+		buttonLabel = fonts.ICON_VOLUME_OFF
+	}
 	if imgui.ButtonV(fmt.Sprintf("%s##mute_%p", buttonLabel, ui), imgui.Vec2{X: 60, Y: 30}) {
 		ui.cueMix.ToggleMute()
 	}
