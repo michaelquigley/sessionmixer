@@ -119,6 +119,15 @@ func (ui *MasterUI) DrawControls(state *dfx.State) {
 		ui.cueMix.ToggleMute()
 	}
 
+	// Tooltip for mute button
+	if imgui.IsItemHovered() {
+		if muted {
+			imgui.SetTooltip("Click to unmute output")
+		} else {
+			imgui.SetTooltip("Click to mute output")
+		}
+	}
+
 	imgui.PopStyleColorV(3)
 
 	// Future: Add more control buttons here (e.g., Solo, PFL, etc.)
