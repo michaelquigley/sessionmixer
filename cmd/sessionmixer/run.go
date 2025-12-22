@@ -66,15 +66,15 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "error building session")
 	}
 
-	// Initialize faders from hardware values
+	// Initialize faders and routing state from hardware values
 	for _, cueMix := range sess.CueMixes {
 		if err := cueMix.InitializeFaders(); err != nil {
 			return errors.Wrap(err, "error initializing faders")
 		}
 
-		// Setup routing for each cue mix
-		if err := cueMix.SetupRouting(); err != nil {
-			return errors.Wrapf(err, "error setting up routing for %s", cueMix.Name())
+		// Initialize routing state from hardware (respects existing routing)
+		if err := cueMix.InitializeFromHardware(); err != nil {
+			return errors.Wrapf(err, "error initializing routing for %s", cueMix.Name())
 		}
 	}
 

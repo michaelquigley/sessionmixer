@@ -85,11 +85,17 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 	faderWidth := float32(100)                    // Base width per device fader column
 	controlsWidth := float32(80)                  // Width for controls column
 	vuWidth := ui.masterUI.GetVUMeterWidth() + 20 // VU meter width + padding
-	sectionPadding := float32(50)                 // ~25px padding on each side of separator
+
+	// Padding configuration: asymmetric around separators
+	// - Right padding (before separator): 25px
+	// - Left padding (after separator): 12px (reduced by 50%)
+	leftPadding := float32(12)      // Padding before output VU (reduced from 25)
+	paddingBeforeSep := float32(25) // Right side padding before separator
+	paddingAfterSep := float32(12)  // Left side padding after separator (reduced from 25)
+	sectionPadding := paddingBeforeSep + paddingAfterSep
 
 	// Total columns: left padding + output VU + spacer + controls + spacer + device faders
 	totalColumns := numFaders + 5
-	leftPadding := float32(25) // Padding before output VU
 	totalWidth := leftPadding + vuWidth + sectionPadding + controlsWidth + sectionPadding + float32(numFaders)*faderWidth + 50
 
 	// Create a table for layout (no borders - we'll draw our own)
@@ -142,8 +148,8 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 	separatorColor := imgui.ColorU32Vec4(imgui.Vec4{X: 0.5, Y: 0.5, Z: 0.5, W: 0.5})
 	lineThickness := float32(1.0)
 
-	// Separator after Output VU column (in middle of first spacer)
-	sep1X := windowPos.X + leftPadding + vuWidth + sectionPadding/2
+	// Separator after Output VU column (at paddingBeforeSep into the spacer)
+	sep1X := windowPos.X + leftPadding + vuWidth + paddingBeforeSep
 	drawList.AddLineV(
 		imgui.Vec2{X: sep1X, Y: windowPos.Y},
 		imgui.Vec2{X: sep1X, Y: windowPos.Y + contentHeight - 20},
@@ -151,8 +157,8 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 		lineThickness,
 	)
 
-	// Separator after Controls column (in middle of second spacer)
-	sep2X := windowPos.X + leftPadding + vuWidth + sectionPadding + controlsWidth + sectionPadding/2
+	// Separator after Controls column (at paddingBeforeSep into the spacer)
+	sep2X := windowPos.X + leftPadding + vuWidth + sectionPadding + controlsWidth + paddingBeforeSep
 	drawList.AddLineV(
 		imgui.Vec2{X: sep2X, Y: windowPos.Y},
 		imgui.Vec2{X: sep2X, Y: windowPos.Y + contentHeight - 20},

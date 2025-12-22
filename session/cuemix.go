@@ -81,6 +81,8 @@ func (cm *CueMix) SetMuted(muted bool) error {
 			if err := ep.RoutingControl.SetValue(int64(offIdx)); err != nil {
 				return fmt.Errorf("failed to set routing for %s: %w", ep.Port.Name, err)
 			}
+			// Update cached state to match hardware
+			ep.SetSourceIndex(offIdx)
 		}
 		atomic.StoreInt32(&state.muted, 1)
 	} else {
@@ -100,6 +102,8 @@ func (cm *CueMix) SetMuted(muted bool) error {
 			if err := ep.RoutingControl.SetValue(int64(idx)); err != nil {
 				return fmt.Errorf("failed to restore routing for %s: %w", ep.Port.Name, err)
 			}
+			// Update cached state to match hardware
+			ep.SetSourceIndex(idx)
 		}
 		atomic.StoreInt32(&state.muted, 0)
 	}
@@ -175,6 +179,58 @@ func (cm *CueMix) InitializeFaders() error {
 			log.Printf("Warning: failed to initialize fader %s: %v", fader.Name(), err)
 		}
 	}
+	return nil
+}
+
+// InitializeFromHardware reads current routing state from hardware and sets
+// the mute state accordingly. If routing is already set up, the mix is active.
+// If routing is not present, the mix starts muted.
+func (cm *CueMix) InitializeFromHardware() error {
+	state := cm.getState()
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	// Get expected routing sources (e.g., ["Mix A", "Mix B"])
+	expectedSources := cm.getRoutingSources()
+
+	// Refresh routing state from hardware
+	for _, ep := range cm.Endpoints {
+		if err := ep.RefreshFromHardware(); err != nil {
+			return fmt.Errorf("failed to read routing for %s: %w", ep.Port.Name, err)
+		}
+	}
+
+	// Check if current routing matches expected
+	routingMatches := true
+	for i, ep := range cm.Endpoints {
+		if i >= len(expectedSources) {
+			break
+		}
+		currentSource := ep.GetCurrentSource()
+		if currentSource != expectedSources[i] {
+			routingMatches = false
+			break
+		}
+	}
+
+	if routingMatches {
+		// Routing is already set up - mix is active
+		atomic.StoreInt32(&state.muted, 0)
+		// Store current routing in savedRouting for consistency
+		for i, ep := range cm.Endpoints {
+			state.savedRouting[i] = ep.GetCurrentSource()
+		}
+	} else {
+		// Routing not present - start muted
+		atomic.StoreInt32(&state.muted, 1)
+		// Store expected routing so unmute will set it up correctly
+		for i := range cm.Endpoints {
+			if i < len(expectedSources) {
+				state.savedRouting[i] = expectedSources[i]
+			}
+		}
+	}
+
 	return nil
 }
 
