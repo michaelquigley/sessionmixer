@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/michaelquigley/dfx"
 	"github.com/michaelquigley/scarlettctl"
 	"github.com/michaelquigley/sessionmixer"
@@ -9,6 +13,32 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
+
+// uiConfig holds persistent UI state (window position, etc.)
+type uiConfig struct {
+	Window dfx.WindowConfig
+}
+
+// defaultUIConfig returns sensible defaults for the UI configuration
+func defaultUIConfig(numCueMixes int) *uiConfig {
+	// Calculate default height based on number of cue mixes
+	height := 150 + numCueMixes*420
+	if height < 500 {
+		height = 500
+	}
+	if height > 1200 {
+		height = 1200
+	}
+
+	return &uiConfig{
+		Window: dfx.WindowConfig{
+			X:      100,
+			Y:      100,
+			Width:  800,
+			Height: height,
+		},
+	}
+}
 
 func init() {
 	rootCmd.AddCommand(newRunCommand().cmd)
@@ -78,6 +108,18 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 		}
 	}
 
+	// Load UI configuration (window position/size)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return errors.Wrap(err, "error getting user home directory")
+	}
+	uiCfgPath := filepath.Join(home, ".config", "sessionmixer", "ui.json")
+
+	uiCfg := defaultUIConfig(len(sess.CueMixes))
+	if err := dfx.LoadJSON(uiCfgPath, uiCfg); err != nil {
+		fmt.Printf("warning: error loading UI config: %v\n", err)
+	}
+
 	// Create mixer UI
 	mixer := sessionmixer.NewSessionMixer(sess)
 
@@ -91,20 +133,20 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 
 	mixer.SetMonitor(monitor)
 
-	// Calculate window size based on number of cue mixes
-	// Base height per cue mix + some padding
-	height := 150 + len(sess.CueMixes)*420
-	if height < 500 {
-		height = 500
-	}
-	if height > 1200 {
-		height = 1200
-	}
-
 	app := dfx.New(mixer, dfx.Config{
 		Title:  "SessionMixer",
-		Width:  800,
-		Height: height,
+		Width:  uiCfg.Window.Width,
+		Height: uiCfg.Window.Height,
+		X:      uiCfg.Window.X,
+		Y:      uiCfg.Window.Y,
+
+		OnClose: func(app *dfx.App) {
+			// Save window state on close
+			uiCfg.Window = dfx.CaptureWindowState(app)
+			if err := dfx.SaveJSON(uiCfgPath, uiCfg); err != nil {
+				fmt.Printf("warning: error saving UI config: %v\n", err)
+			}
+		},
 	})
 	return app.Run()
 }
