@@ -7,6 +7,9 @@ import (
 	"github.com/charmbracelet/fang"
 	"github.com/michaelquigley/df/dl"
 	"github.com/spf13/cobra"
+
+	// Register device profiles
+	_ "github.com/michaelquigley/sessionmixer/topology/profiles"
 )
 
 func init() {

@@ -17,7 +17,6 @@ func init() {
 
 type topologyCommand struct {
 	cmd         *cobra.Command
-	device      string
 	showRouting bool
 	showMixes   bool
 	showMeters  bool
@@ -30,7 +29,6 @@ func newTopologyCommand() *topologyCommand {
 		Args:  cobra.NoArgs,
 	}
 	out := &topologyCommand{cmd: cmd}
-	cmd.Flags().StringVarP(&out.device, "device", "d", "auto", "Device profile (auto, 18i20, or 16i16)")
 	cmd.Flags().BoolVarP(&out.showRouting, "routing", "r", false, "Show current routing")
 	cmd.Flags().BoolVarP(&out.showMixes, "mixes", "m", false, "Show mix details")
 	cmd.Flags().BoolVarP(&out.showMeters, "meters", "l", false, "Show level meters")
@@ -50,20 +48,16 @@ func (cmd *topologyCommand) run(_ *cobra.Command, _ []string) error {
 	}
 	defer card.Close()
 
-	// Select device profile
-	var profile topology.DeviceProfile
-	switch cmd.device {
-	case "auto":
-		profile, err = topology.DetectProfile(card)
-		if err != nil {
-			return errors.Wrap(err, "auto-detection failed")
-		}
-	case "18i20":
-		profile = topology.NewScarlett18i20Gen4Profile()
-	case "16i16":
-		profile = topology.NewScarlett16i16Gen4Profile()
-	default:
-		return fmt.Errorf("unknown device profile: %s (supported: auto, 18i20, 16i16)", cmd.device)
+	// Read firmware info from hardware (for display)
+	fwInfo, err := topology.ReadFirmwareInfo(card)
+	if err != nil {
+		return errors.Wrap(err, "error reading firmware version")
+	}
+
+	// Detect device profile
+	profile, err := topology.DetectProfile(card)
+	if err != nil {
+		return errors.Wrap(err, "device detection failed")
 	}
 	builder := topology.NewDeviceBuilder(card, profile)
 	device, err := builder.Build()
@@ -76,7 +70,9 @@ func (cmd *topologyCommand) run(_ *cobra.Command, _ []string) error {
 
 	// Display summary
 	fmt.Printf("Device: %s\n", device.Name)
+	fmt.Printf("Profile: %s\n", profile.Name())
 	fmt.Printf("Card: %d\n", cfg.Card)
+	fmt.Printf("Firmware: App=%s, ESP=%s\n", fwInfo.App, fwInfo.ESP)
 	fmt.Println(strings.Repeat("=", 60))
 
 	// Display ports
