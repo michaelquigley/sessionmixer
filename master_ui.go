@@ -147,6 +147,45 @@ func (ui *MasterUI) DrawOutputVU(state *dfx.State) {
 	if ui.vuMeter != nil {
 		ui.vuMeter.Draw(state)
 	}
+
+	// Display configured outputs
+	// Check if outputs match a device definition
+	if deviceName := ui.findMatchingDeviceName(); deviceName != "" {
+		imgui.Text(deviceName)
+	} else {
+		// Fall back to individual port short names
+		for _, port := range ui.cueMix.Outputs {
+			imgui.Text(port.ShortName)
+		}
+	}
+}
+
+// findMatchingDeviceName checks if the cue mix outputs match a device's ports
+// and returns the device name if found, empty string otherwise.
+func (ui *MasterUI) findMatchingDeviceName() string {
+	if ui.cueMix.Session == nil || len(ui.cueMix.Outputs) == 0 {
+		return ""
+	}
+
+	for _, device := range ui.cueMix.Session.DeviceList {
+		if len(device.Ports) != len(ui.cueMix.Outputs) {
+			continue
+		}
+
+		match := true
+		for i, port := range device.Ports {
+			if port != ui.cueMix.Outputs[i] {
+				match = false
+				break
+			}
+		}
+
+		if match {
+			return device.Name()
+		}
+	}
+
+	return ""
 }
 
 // GetVUMeterWidth returns the width of the VU meter (for layout calculations)
