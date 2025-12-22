@@ -1,4 +1,4 @@
-# 18i20 Gen 4:
+# 18i20 4th Gen:
 
 ## Routing
 
