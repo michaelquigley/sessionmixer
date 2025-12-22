@@ -27,11 +27,12 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 
 - **Automatic Device Detection** - Detects your Scarlett interface and loads the appropriate device profile
 - **Device Topology Discovery** - Inspect your interface's ports, mixes, routing, and level meters
-- **Ganged Faders** - Control multiple hardware channels with a single fader (e.g., stereo pairs)
-- **Configurable Tapers** - Choose between logarithmic (dB) or linear fader response
-- **Level Metering** - Real-time signal visualization with two modes:
-  - **VU Meters** - Vertical meter bars alongside faders
-  - **Track Color** - Fader background changes color based on signal level
+- **Cue Mix Management** - Create multiple independent cue mixes routed to different outputs
+- **Device-Centric Configuration** - Name your audio sources (instruments, mics, DAW channels) and use them across mixes
+- **Stereo Ganging** - Stereo mix pairs automatically gang faders for linked control
+- **Mute with Routing** - Mute disconnects outputs by routing to "Off", unmute restores routing
+- **Non-Destructive Startup** - Respects existing hardware routing; mixes start muted if not already routed
+- **Level Metering** - Real-time VU meters for both device inputs and mix outputs
 - **Level Smoothing** - Configurable ring buffer averaging for smooth meter response
 - **Bidirectional Sync** - Changes made externally (other software, hardware controls) are reflected in the UI
 - **YAML Configuration** - Simple, human-readable configuration files
@@ -77,27 +78,63 @@ card: 1
 # VU meter smoothing (number of samples to average, 0 = disabled)
 level_smoothing: 8
 
-# Define your faders
-gang_controls:
-  # A single-channel fader
-  - name: "Mains"
-    controls:
-      - "Analogue 1 Playback Volume"
-    unit: "db"
-    taper_db: 72
+# Device definitions - named audio sources mapped to hardware ports
+devices:
+  # Stereo devices (2 ports)
+  - name: "DAW L+R"
+    ports:
+      - pcm-playback-1
+      - pcm-playback-2
 
-  # A stereo gang with VU meters and track coloring
-  - name: "Headphones"
-    controls:
-      - "Mix A Input 01 Playback Volume"
-      - "Mix A Input 02 Playback Volume"
-    levels:
-      - "pcm:0.0/Level Meter[15]"
-      - "pcm:0.0/Level Meter[16]"
-    show_vu_meter: true
-    show_track_color: true
-    unit: "db"
-    taper_db: 72
+  - name: "Guitar FX"
+    ports:
+      - pcm-playback-3
+      - pcm-playback-4
+
+  # Mono devices (1 port)
+  - name: "Vocal Mic"
+    ports:
+      - analogue-in-1
+
+  - name: "Talkback"
+    ports:
+      - analogue-in-2
+
+  # Output devices (for routing shorthand)
+  - name: "S/PDIF"
+    ports:
+      - spdif-out-1
+      - spdif-out-2
+
+# Cue mix allocations
+cue_mixes:
+  # Main monitors - full mix
+  - name: "Main Monitors"
+    mix_pair: "A+B"           # Stereo pair using Mix A and Mix B
+    outputs:
+      - analogue-out-1        # Left output
+      - analogue-out-2        # Right output
+    devices:
+      - "DAW L+R"
+      - "Guitar FX"
+      - "Vocal Mic"
+
+  # Performer cue - DAW and talkback only
+  - name: "Performer Cue"
+    mix_pair: "C+D"
+    outputs:
+      - analogue-out-3
+      - analogue-out-4
+    devices:
+      - "DAW L+R"
+      - "Talkback"
+
+  # S/PDIF feed using device name for outputs
+  - name: "S/PDIF Feed"
+    mix_pair: "E+F"
+    outputs: ["S/PDIF"]       # References the S/PDIF device
+    devices:
+      - "DAW L+R"
 ```
 
 ### Configuration Reference
@@ -108,27 +145,36 @@ gang_controls:
 |-------|-------------|
 | `card` | ALSA card number for your interface |
 | `level_smoothing` | Number of samples to average for level meters (0 = disabled) |
-| `gang_controls` | List of fader definitions |
+| `devices` | List of named audio sources/destinations |
+| `cue_mixes` | List of cue mix definitions |
 
-**Gang Control Fields:**
+**Device Fields:**
 
 | Field | Description |
 |-------|-------------|
-| `name` | Display label for the fader |
-| `controls` | ALSA control names to gang together |
-| `unit` | Display format: `"db"` or `"raw"` |
-| `taper_db` | dB range for logarithmic taper (omit for linear) |
-| `levels` | Level meter control names for signal visualization |
-| `show_vu_meter` | Enable VU meter bars (requires `levels`) |
-| `show_track_color` | Enable track coloring based on level (requires `levels`) |
+| `name` | Display name for this device |
+| `ports` | List of port IDs (1 for mono, 2 for stereo) |
 
-### Finding Control Names
+**Cue Mix Fields:**
 
-Use `scarlettctl` to discover available controls on your interface:
+| Field | Description |
+|-------|-------------|
+| `name` | Display name for this cue mix |
+| `mix_pair` | Mix pair to use: `"A+B"`, `"C+D"`, etc. for stereo; `"A"`, `"C"`, etc. for mono |
+| `outputs` | Hardware output ports or device names |
+| `devices` | List of device names to include in this mix |
 
-```bash
-scarlettctl list
-```
+### Port ID Format
+
+Use `sessionmixer topology` to see available ports on your device.
+
+Common port ID patterns:
+- `analogue-in-1` through `analogue-in-N` - Hardware analogue inputs
+- `analogue-out-1` through `analogue-out-N` - Hardware analogue outputs
+- `spdif-in-1`, `spdif-in-2` - S/PDIF inputs
+- `spdif-out-1`, `spdif-out-2` - S/PDIF outputs
+- `adat-in-1` through `adat-in-8` - ADAT inputs
+- `pcm-playback-1` through `pcm-playback-N` - DAW playback channels
 
 ## Usage
 
@@ -149,14 +195,20 @@ scarlettctl list
 ./sessionmixer topology --meters
 ```
 
-### Controls
+### UI Layout
 
-- **Drag faders** to adjust levels
-- Fader values sync bidirectionally with hardware
-- Level visualization (when `levels` are configured):
-  - **VU Meters** - Vertical bar meters beside faders showing per-channel levels
-  - **Track Color** - Fader background color indicates signal level
-  - Color gradient: Green (normal) → Yellow (approaching peak) → Red (high levels)
+Each cue mix appears as a collapsible section containing:
+
+- **Output VU meters** - Shows the mix output levels and configured outputs
+- **Mute button** - Disconnects outputs (routes to "Off") when muted
+- **Device faders** - One fader per device with input VU meters
+
+### Behavior
+
+- **Stereo ganging** - Stereo mix pairs (A+B, C+D, etc.) automatically gang faders
+- **Mute** - Routes outputs to "Off" and saves current routing for restore
+- **Startup** - Reads hardware routing state; if routing doesn't match expected, mix starts muted
+- **Bidirectional sync** - External changes are reflected in the UI
 
 ## License
 
