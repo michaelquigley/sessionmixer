@@ -1,41 +1,101 @@
 # sessionmixer configuration example
-# This file demonstrates how to configure a custom mixer control surface
+# This file demonstrates how to configure devices and cue mixes
 # for Focusrite Scarlett audio interfaces
 
 # ALSA card number (usually 0 for the first Scarlett device)
 card: 1
 
-# Use a ring buffer for VU meter smoothing. Specified in a number of samples.
+# Use a ring buffer for VU meter smoothing. Specified in number of samples.
 # Setting to `0` or omitting this configuration disables VU smoothing.
 level_smoothing: 8
 
-# Ganged controls (one fader controls multiple hardware controls)
-gang_controls:
-  - name: "Mains"
-    controls:
-      - "Analogue 1 Playback Volume"
-    unit: "db"
-    taper_db: 72
+# Device definitions - named audio sources mapped to topology ports
+# Each device represents a logical audio source (e.g., instrument, mic, DAW output)
+devices:
+  # Stereo devices (2 ports)
+  - name: "DAW L+R"
+    ports:
+      - pcm-playback-1
+      - pcm-playback-2
 
-  - name: "MainMix"
-    controls:
-      - "Mix A Input 01 Playback Volume"
-      - "Mix B Input 02 Playback Volume"
-    levels:
-      - "pcm:0.0/Level Meter[15]"
-      - "pcm:0.0/Level Meter[16]"
-    show_vu_meter: true      # Display VU meter bars alongside fader
-    show_track_color: true   # Color fader track based on signal level
-    unit: "db"
-    taper_db: 72
+  - name: "Guitar FX"
+    ports:
+      - pcm-playback-3
+      - pcm-playback-4
+
+  - name: "Keys"
+    ports:
+      - pcm-playback-5
+      - pcm-playback-6
+
+  # Mono devices (1 port)
+  - name: "Vocal Mic"
+    ports:
+      - analogue-in-1
+
+  - name: "Talkback"
+    ports:
+      - analogue-in-2
+
+  - name: "Bass DI"
+    ports:
+      - analogue-in-3
+
+# Cue mix allocations
+# Each cue mix uses a pair of hardware mixes (A+B, C+D, etc.) routed to outputs
+cue_mixes:
+  # Main monitors - everything
+  - name: "Main Monitors"
+    mix_pair: "A+B"           # Stereo pair using Mix A and Mix B
+    outputs:
+      - analogue-out-1        # Left output
+      - analogue-out-2        # Right output
+    devices:
+      - "DAW L+R"
+      - "Guitar FX"
+      - "Keys"
+      - "Vocal Mic"
+      - "Bass DI"
+
+  # Drummer cue - DAW, vocals, talkback
+  - name: "Drummer Cue"
+    mix_pair: "C+D"
+    outputs:
+      - analogue-out-3
+      - analogue-out-4
+    devices:
+      - "DAW L+R"
+      - "Vocal Mic"
+      - "Talkback"
+
+  # Guitarist cue - DAW, their own FX, bass
+  - name: "Guitarist Cue"
+    mix_pair: "E+F"
+    outputs:
+      - analogue-out-5
+      - analogue-out-6
+    devices:
+      - "DAW L+R"
+      - "Guitar FX"
+      - "Bass DI"
 
 # Notes:
-# - Control names must match exactly what ALSA reports (case-sensitive)
-# - Use `scarlettctl list` to see available controls for your device
-# - Ganged controls are displayed as a single fader
-# - Individual controls and ganged controls can be mixed
-# - taper_db: if set, uses DecibelTaper with specified dB range (e.g., 72 for -60dB to +12dB)
-#             if omitted or 0, uses LinearTaper (default)
-# - show_vu_meter: displays vertical VU meter bars alongside the fader (requires levels)
-# - show_track_color: colors the fader track background based on signal level (requires levels)
-# - level_smoothing: number of samples to average for smoother VU meter response (0 = disabled)
+# - Port IDs follow the topology convention:
+#   - analogue-in-1 through analogue-in-9 (hardware inputs)
+#   - analogue-out-1 through analogue-out-14 (hardware outputs)
+#   - spdif-in-1, spdif-in-2 (S/PDIF inputs)
+#   - adat-in-1 through adat-in-8 (ADAT inputs)
+#   - pcm-playback-1 through pcm-playback-24 (DAW output to interface)
+#
+# - Use `sessionmixer topology` to see available ports on your device
+#
+# - Mix pairs (A+B, C+D, etc.) are stereo linked - one fader controls both channels
+#
+# - Each cue mix has:
+#   - Collapsible UI section
+#   - Faders for each device with VU meters showing input levels
+#   - MUTE button that disconnects outputs (routes to "Off")
+#   - Output VU meters showing mix output levels
+#
+# - Stereo devices (2 ports) are automatically ganged in stereo cue mixes
+# - Mono devices in stereo cue mixes are sent to both L and R

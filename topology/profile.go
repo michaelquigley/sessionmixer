@@ -34,6 +34,7 @@ type DeviceProfile interface {
 	SPDIFOutputRoutingControlName(portNum int) string
 	ADATOutputRoutingControlName(portNum int) string
 	PCMCaptureRoutingControlName(portNum int) string
+	MixerInputRoutingControlName(inputNum int) string
 	LevelMeterControlName(index int) string
 
 	// Input capabilities by port number

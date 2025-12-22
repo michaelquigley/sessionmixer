@@ -31,6 +31,7 @@ type Device struct {
 	SPDIFOutputEndpoints    []*RoutingEndpoint
 	ADATOutputEndpoints     []*RoutingEndpoint
 	PCMCaptureEndpoints     []*RoutingEndpoint
+	MixerInputEndpoints     []*RoutingEndpoint
 
 	// All level meters for bulk reading
 	LevelMeterControls []*scarlettctl.Control
@@ -116,6 +117,7 @@ func (d *Device) AllRoutingEndpoints() []*RoutingEndpoint {
 	endpoints = append(endpoints, d.SPDIFOutputEndpoints...)
 	endpoints = append(endpoints, d.ADATOutputEndpoints...)
 	endpoints = append(endpoints, d.PCMCaptureEndpoints...)
+	endpoints = append(endpoints, d.MixerInputEndpoints...)
 	return endpoints
 }
 

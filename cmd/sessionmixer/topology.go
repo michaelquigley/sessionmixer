@@ -100,7 +100,8 @@ func (cmd *topologyCommand) run(_ *cobra.Command, _ []string) error {
 		totalEndpoints := len(device.AnalogueOutputEndpoints) +
 			len(device.SPDIFOutputEndpoints) +
 			len(device.ADATOutputEndpoints) +
-			len(device.PCMCaptureEndpoints)
+			len(device.PCMCaptureEndpoints) +
+			len(device.MixerInputEndpoints)
 		fmt.Printf("\nRouting Endpoints: %d\n", totalEndpoints)
 		fmt.Println("  (use --routing to show details)")
 	}
@@ -217,6 +218,7 @@ func (cmd *topologyCommand) printRouting(device *topology.Device) {
 	printEndpoints("S/PDIF Outputs", device.SPDIFOutputEndpoints)
 	printEndpoints("ADAT Outputs", device.ADATOutputEndpoints)
 	printEndpoints("PCM Capture", device.PCMCaptureEndpoints)
+	printEndpoints("Mixer Inputs", device.MixerInputEndpoints)
 }
 
 func (cmd *topologyCommand) printMeters(device *topology.Device, state *topology.DeviceState) {

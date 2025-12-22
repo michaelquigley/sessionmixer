@@ -98,19 +98,23 @@ func (p *Scarlett16i16Gen4Profile) MixInputVolumeControlName(mixLetter rune, inp
 }
 
 func (p *Scarlett16i16Gen4Profile) AnalogueOutputRoutingControlName(portNum int) string {
-	return fmt.Sprintf("Analogue Output %02d Playback Enum", portNum)
+	return fmt.Sprintf("Analogue %d Playback Enum", portNum)
 }
 
 func (p *Scarlett16i16Gen4Profile) SPDIFOutputRoutingControlName(portNum int) string {
-	return fmt.Sprintf("S/PDIF Output %02d Playback Enum", portNum)
+	return fmt.Sprintf("S/PDIF %d Playback Enum", portNum)
 }
 
 func (p *Scarlett16i16Gen4Profile) ADATOutputRoutingControlName(portNum int) string {
-	return fmt.Sprintf("ADAT Output %02d Playback Enum", portNum)
+	return fmt.Sprintf("ADAT %d Playback Enum", portNum)
 }
 
 func (p *Scarlett16i16Gen4Profile) PCMCaptureRoutingControlName(portNum int) string {
-	return fmt.Sprintf("PCM %02d Capture Enum", portNum)
+	return fmt.Sprintf("PCM %d Capture Enum", portNum)
+}
+
+func (p *Scarlett16i16Gen4Profile) MixerInputRoutingControlName(inputNum int) string {
+	return fmt.Sprintf("Mixer %d Capture Enum", inputNum)
 }
 
 func (p *Scarlett16i16Gen4Profile) LevelMeterControlName(index int) string {

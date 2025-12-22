@@ -1,131 +1,50 @@
 package sessionmixer
 
 import (
-	"fmt"
-
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/michaelquigley/dfx"
-	"github.com/michaelquigley/scarlettctl"
+	"github.com/michaelquigley/sessionmixer/session"
 )
 
 // SessionMixer is the main mixer component
 // Implements dfx.Component interface for immediate-mode GUI rendering
 type SessionMixer struct {
-	card    *scarlettctl.Card
-	config  *Config
-	gangs   []*GangedFader
-	monitor *EventMonitor
+	session   *session.Session
+	cueMixUIs []*CueMixUI
+	monitor   *SessionEventMonitor
 }
 
-// NewSessionMixer creates a new session mixer
-func NewSessionMixer(card *scarlettctl.Card, config *Config, gangs []*GangedFader) *SessionMixer {
-	return &SessionMixer{
-		card:   card,
-		config: config,
-		gangs:  gangs,
+// NewSessionMixer creates a new session mixer from a session
+func NewSessionMixer(sess *session.Session) *SessionMixer {
+	sm := &SessionMixer{
+		session: sess,
 	}
+
+	// Create UI components for each cue mix
+	levelSmoothing := sess.Config.LevelSmoothing
+	for _, cueMix := range sess.CueMixes {
+		cueMixUI := NewCueMixUI(cueMix, sess.State, levelSmoothing)
+		sm.cueMixUIs = append(sm.cueMixUIs, cueMixUI)
+	}
+
+	return sm
 }
 
 // Draw renders the mixer UI using dfx immediate mode
 // This is called every frame by the dfx application
 func (sm *SessionMixer) Draw(state *dfx.State) {
-	// Calculate total number of faders (individual channels + gangs)
-	totalFaders := len(sm.gangs)
-
-	if totalFaders == 0 {
-		imgui.Text("No controls configured")
+	if len(sm.cueMixUIs) == 0 {
+		imgui.Text("No cue mixes configured")
+		imgui.Text("")
+		imgui.Text("Add cue_mixes to your session.yaml configuration.")
 		return
 	}
 
-	imgui.Dummy(imgui.Vec2{X: 25, Y: 100})
-	imgui.SameLine()
-
-	// Create scrollable child window for fader bank
-	// Similar to dfx_example_mixer layout
-	childSize := imgui.Vec2{X: 0, Y: 450} // X=0 fills available width
-	imgui.BeginChildStrV("FaderBank", childSize,
-		imgui.ChildFlagsNone,
-		imgui.WindowFlagsHorizontalScrollbar)
-
-	// Use table layout for stable column widths
-	// Calculate column widths - wider for gangs with VU meters
-	baseFaderWidth := float32(80.0)
-	var contentWidth float32
-	columnWidths := make([]float32, totalFaders)
-	for i, gang := range sm.gangs {
-		if gang.HasVUMeter() {
-			// Fader (60) + spacing (8) + VU meter width + padding (16)
-			columnWidths[i] = 60 + 8 + gang.GetVUMeter().Width() + 16
-		} else {
-			columnWidths[i] = baseFaderWidth
-		}
-		contentWidth += columnWidths[i]
+	// Draw each cue mix section
+	for _, cueMixUI := range sm.cueMixUIs {
+		cueMixUI.Draw(state)
+		imgui.Spacing()
 	}
-
-	imgui.BeginTableV("mixer_table", int32(totalFaders),
-		imgui.TableFlagsNone,
-		imgui.Vec2{X: contentWidth + 50, Y: 0}, 0.0)
-
-	// Setup fixed-width columns
-	for i := 0; i < totalFaders; i++ {
-		imgui.TableSetupColumnV(fmt.Sprintf("##col%d", i),
-			imgui.TableColumnFlagsWidthFixed, columnWidths[i], 0)
-	}
-
-	// Row 1: Channel labels
-	imgui.TableNextRow()
-	for _, gang := range sm.gangs {
-		imgui.TableNextColumn()
-		imgui.Text(gang.GetName())
-	}
-
-	// Row 2: Faders
-	imgui.TableNextRow()
-
-	// Draw ganged faders
-	for i, gang := range sm.gangs {
-		imgui.TableNextColumn()
-
-		currentValue := int(gang.GetCurrentValue())
-
-		// Get params and set TrackColor if enabled
-		params := gang.GetParams()
-		if gang.HasLevels() && gang.ShowTrackColor() {
-			params.TrackColor = gang.GetLevelColor()
-		}
-
-		// Use dfx.FaderI for ganged fader
-		newValue, changed := dfx.FaderI(
-			fmt.Sprintf("##fader_gang_%d", i),
-			currentValue,
-			int(gang.GetMin()),
-			int(gang.GetMax()),
-			params)
-
-		if changed {
-			// IMMEDIATE write to all ganged channels
-			gang.HandleUIChange(int64(newValue))
-		}
-
-		// Draw VU meter to the right if enabled
-		if gang.HasVUMeter() {
-			imgui.SameLine()
-			levels := gang.GetNormalizedLevels()
-			gang.GetVUMeter().SetLevels(levels)
-			gang.GetVUMeter().Draw(state)
-		}
-	}
-
-	// Row 3: Value displays
-	imgui.TableNextRow()
-	for _, gang := range sm.gangs {
-		imgui.TableNextColumn()
-		currentValue := gang.GetCurrentValue()
-		imgui.Text(fmt.Sprintf("%d", currentValue))
-	}
-
-	imgui.EndTable()
-	imgui.EndChild()
 }
 
 // Actions returns the action registry for keyboard shortcuts
@@ -134,16 +53,28 @@ func (sm *SessionMixer) Actions() *dfx.ActionRegistry {
 }
 
 // SetMonitor sets the event monitor for hardware change notifications
-func (sm *SessionMixer) SetMonitor(monitor *EventMonitor) {
+func (sm *SessionMixer) SetMonitor(monitor *SessionEventMonitor) {
 	sm.monitor = monitor
 }
 
-// GetCard returns the scarlettctl card
-func (sm *SessionMixer) GetCard() *scarlettctl.Card {
-	return sm.card
+// GetSession returns the session
+func (sm *SessionMixer) GetSession() *session.Session {
+	return sm.session
 }
 
-// GetGangs returns the ganged faders
-func (sm *SessionMixer) GetGangs() []*GangedFader {
-	return sm.gangs
+// GetCueMixUIs returns the cue mix UI components
+func (sm *SessionMixer) GetCueMixUIs() []*CueMixUI {
+	return sm.cueMixUIs
+}
+
+// GetAllDeviceFaders returns all device faders from all cue mixes
+// This is used for event monitor registration
+func (sm *SessionMixer) GetAllDeviceFaders() []*session.DeviceFader {
+	var faders []*session.DeviceFader
+	for _, cueMixUI := range sm.cueMixUIs {
+		for _, faderUI := range cueMixUI.GetFaders() {
+			faders = append(faders, faderUI.GetFader())
+		}
+	}
+	return faders
 }

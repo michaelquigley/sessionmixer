@@ -14,6 +14,7 @@ const (
 	PortTypeSPDIF    PortType = "S/PDIF"
 	PortTypeADAT     PortType = "ADAT"
 	PortTypePCM      PortType = "PCM"
+	PortTypeMixer    PortType = "Mixer"
 )
 
 // PortDirection indicates whether a port is an input or output

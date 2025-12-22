@@ -76,6 +76,11 @@ func (b *DeviceBuilder) Build() (*Device, error) {
 		return nil, fmt.Errorf("building routing endpoints: %w", err)
 	}
 
+	// Build mixer input routing endpoints
+	if err := b.buildMixerInputEndpoints(device); err != nil {
+		return nil, fmt.Errorf("building mixer input endpoints: %w", err)
+	}
+
 	// Collect all level meter controls
 	b.collectLevelMeters(device)
 
@@ -406,6 +411,38 @@ func (b *DeviceBuilder) buildRoutingEndpoints(device *Device) error {
 
 		if err := endpoint.RefreshFromHardware(); err == nil {
 			device.PCMCaptureEndpoints = append(device.PCMCaptureEndpoints, endpoint)
+		}
+	}
+
+	return nil
+}
+
+func (b *DeviceBuilder) buildMixerInputEndpoints(device *Device) error {
+	for inputNum := 1; inputNum <= b.profile.MixInputCount(); inputNum++ {
+		ctl := b.findControl(b.profile.MixerInputRoutingControlName(inputNum))
+		if ctl == nil {
+			continue
+		}
+
+		// Create a port for the mixer input slot
+		port := &Port{
+			ID:              fmt.Sprintf("mixer-input-%d", inputNum),
+			Name:            fmt.Sprintf("Mixer %d", inputNum),
+			ShortName:       fmt.Sprintf("Mix%d", inputNum),
+			Type:            PortTypeMixer,
+			Direction:       PortDirectionInput,
+			Number:          inputNum,
+			LevelMeterIndex: -1,
+		}
+
+		endpoint := &RoutingEndpoint{
+			Port:             port,
+			RoutingControl:   ctl,
+			AvailableSources: ctl.Items,
+		}
+
+		if err := endpoint.RefreshFromHardware(); err == nil {
+			device.MixerInputEndpoints = append(device.MixerInputEndpoints, endpoint)
 		}
 	}
 
