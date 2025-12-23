@@ -144,13 +144,6 @@ func (ui *MasterUI) DrawOutputVU(state *dfx.State) {
 		ui.vuMeter.SetLevels(levels)
 	}
 
-	imgui.Text("Output")
-
-	// Output VU meters
-	if ui.vuMeter != nil {
-		ui.vuMeter.Draw(state)
-	}
-
 	// Display configured outputs
 	// Check if outputs match a device definition
 	if deviceName := ui.findMatchingDeviceName(); deviceName != "" {
@@ -160,6 +153,11 @@ func (ui *MasterUI) DrawOutputVU(state *dfx.State) {
 		for _, port := range ui.cueMix.Outputs {
 			imgui.Text(port.ShortName)
 		}
+	}
+
+	// Output VU meters
+	if ui.vuMeter != nil {
+		ui.vuMeter.Draw(state)
 	}
 }
 
