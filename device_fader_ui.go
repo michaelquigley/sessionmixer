@@ -67,9 +67,8 @@ func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, l
 	// Create VU meter if we have level controls
 	if len(ui.levelControls) > 0 {
 		ui.vuMeter = dfx.NewVUMeter(len(ui.levelControls))
-		ui.vuMeter.SegmentCount = 141
-		ui.vuMeter.SegmentGap = 1
-		ui.vuMeter.Height = 301
+		ui.vuMeter.Height = 300
+		ui.vuMeter.Mode = dfx.VUMeterHighres
 
 		// Label channels
 		labels := make([]string, len(ui.levelControls))

@@ -65,9 +65,8 @@ func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoot
 	// Create VU meter for mix outputs
 	if len(ui.levelControls) > 0 {
 		ui.vuMeter = dfx.NewVUMeter(len(ui.levelControls))
-		ui.vuMeter.SegmentCount = 141
-		ui.vuMeter.SegmentGap = 1
-		ui.vuMeter.Height = 301
+		ui.vuMeter.Height = 303
+		ui.vuMeter.Mode = dfx.VUMeterHighres
 
 		// Label channels L/R or M
 		labels := make([]string, len(ui.levelControls))
