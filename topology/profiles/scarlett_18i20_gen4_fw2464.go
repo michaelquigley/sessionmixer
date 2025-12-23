@@ -55,8 +55,8 @@ func (p *Scarlett18i20Gen4FW2464Profile) buildLevelMeterMap() {
 		p.levelMeterMap[fmt.Sprintf("adat-in-%d", i)] = 10 + i
 	}
 
-	// PCM Playback 1-24 -> meters [27-50]
-	for i := 1; i <= 24; i++ {
+	// PCM Playback 1-26 -> meters [27-52]
+	for i := 1; i <= 26; i++ {
 		p.levelMeterMap[fmt.Sprintf("pcm-playback-%d", i)] = 26 + i
 	}
 
@@ -71,8 +71,7 @@ func (p *Scarlett18i20Gen4FW2464Profile) buildLevelMeterMap() {
 		p.levelMeterMap[fmt.Sprintf("analogue-out-%d", i)] = 64 + i
 	}
 
-	// Note: Meters [51-52] are unused/undefined in the documentation
-	// S/PDIF and ADAT outputs don't have level meters in the layout
+	// Note: S/PDIF and ADAT outputs don't have level meters in the layout
 	// PCM Capture channels don't have level meters (they're virtual)
 }
 
@@ -84,7 +83,7 @@ func (p *Scarlett18i20Gen4FW2464Profile) SPDIFInputCount() int     { return 2 }
 func (p *Scarlett18i20Gen4FW2464Profile) SPDIFOutputCount() int    { return 2 }
 func (p *Scarlett18i20Gen4FW2464Profile) ADATInputCount() int      { return 16 }
 func (p *Scarlett18i20Gen4FW2464Profile) ADATOutputCount() int     { return 16 }
-func (p *Scarlett18i20Gen4FW2464Profile) PCMPlaybackCount() int    { return 24 }
+func (p *Scarlett18i20Gen4FW2464Profile) PCMPlaybackCount() int    { return 26 }
 func (p *Scarlett18i20Gen4FW2464Profile) PCMCaptureCount() int     { return 26 }
 func (p *Scarlett18i20Gen4FW2464Profile) MixCount() int            { return 12 }
 func (p *Scarlett18i20Gen4FW2464Profile) MixInputCount() int       { return 53 }
