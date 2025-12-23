@@ -75,7 +75,6 @@ func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, l
 	if len(ui.levelControls) > 0 {
 		ui.vuMeter = dfx.NewVUMeter(len(ui.levelControls))
 		ui.vuMeter.Height = 300
-		ui.vuMeter.ChannelWidth = 20
 		ui.vuMeter.Mode = dfx.VUMeterHighres
 
 		// Label channels
@@ -95,7 +94,7 @@ func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, l
 		// Create VU waterfall (same channel count, matching height)
 		ui.vuWaterfall = dfx.NewVUWaterfall(len(ui.levelControls))
 		ui.vuWaterfall.Height = 300
-		ui.vuWaterfall.ChannelWidth = 20
+		ui.vuWaterfall.ChannelWidth = 12
 		ui.vuWaterfall.ChannelGap = 4
 		ui.vuWaterfall.RowHeight = 1
 		ui.vuWaterfall.Highres = true

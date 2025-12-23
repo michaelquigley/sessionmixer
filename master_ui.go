@@ -88,7 +88,7 @@ func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoot
 		// Create VU waterfall (same channel count, matching height)
 		ui.vuWaterfall = dfx.NewVUWaterfall(len(ui.levelControls))
 		ui.vuWaterfall.Height = 303
-		ui.vuWaterfall.ChannelWidth = 20
+		ui.vuWaterfall.ChannelWidth = 12
 		ui.vuWaterfall.ChannelGap = 4
 		ui.vuWaterfall.RowHeight = 1
 		ui.vuWaterfall.Highres = true
