@@ -9,8 +9,7 @@ import (
 func init() {
 	RegisterProfile(topology.ProfileEntry{
 		CardNameContains: "18i20",
-		// TODO: Set actual firmware version from hardware testing
-		AppFirmware: topology.FirmwareVersion{Major: 2, Minor: 0, Patch: 2399, Build: 4559},
+		AppFirmware:      topology.FirmwareVersion{Major: 2, Minor: 0, Patch: 2399, Build: 4559},
 		ESPFirmware: topology.FirmwareVersion{Major: 1, Minor: 0, Patch: 0, Build: 348},
 		CreateProfile: func(app, esp topology.FirmwareVersion) topology.DeviceProfile {
 			return NewScarlett18i20Gen4Profile(app, esp)
@@ -39,7 +38,7 @@ func NewScarlett18i20Gen4Profile(appFirmware, espFirmware topology.FirmwareVersi
 }
 
 // buildLevelMeterMap populates the level meter index lookup table
-// Based on docs/18i20g4-layout.md
+// Based on docs/18i20g4-2399-layout.md
 func (p *Scarlett18i20Gen4Profile) buildLevelMeterMap() {
 	// Analogue Inputs 1-9 -> meters [0-8]
 	for i := 1; i <= 9; i++ {
@@ -75,7 +74,7 @@ func (p *Scarlett18i20Gen4Profile) buildLevelMeterMap() {
 	// PCM Capture channels don't have level meters (they're virtual)
 }
 
-func (p *Scarlett18i20Gen4Profile) Name() string             { return "Scarlett 18i20 4th Gen" }
+func (p *Scarlett18i20Gen4Profile) Name() string             { return "Scarlett 18i20 4th Gen (FW 2399)" }
 func (p *Scarlett18i20Gen4Profile) Generation() int          { return 4 }
 func (p *Scarlett18i20Gen4Profile) AnalogueInputCount() int  { return 9 }
 func (p *Scarlett18i20Gen4Profile) AnalogueOutputCount() int { return 14 }
