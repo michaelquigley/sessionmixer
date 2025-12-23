@@ -14,16 +14,22 @@ type SessionMixer struct {
 	monitor   *SessionEventMonitor
 }
 
-// NewSessionMixer creates a new session mixer from a session
-func NewSessionMixer(sess *session.Session) *SessionMixer {
+// NewSessionMixer creates a new session mixer from a session.
+// waterfallStates contains saved waterfall open/closed states keyed by "cueMixName/deviceName" or "cueMixName/master".
+func NewSessionMixer(sess *session.Session, waterfallStates map[string]bool) *SessionMixer {
 	sm := &SessionMixer{
 		session: sess,
+	}
+
+	// Ensure waterfallStates is not nil
+	if waterfallStates == nil {
+		waterfallStates = make(map[string]bool)
 	}
 
 	// Create UI components for each cue mix
 	levelSmoothing := sess.Config.LevelSmoothing
 	for _, cueMix := range sess.CueMixes {
-		cueMixUI := NewCueMixUI(cueMix, sess.State, levelSmoothing)
+		cueMixUI := NewCueMixUI(cueMix, sess.State, levelSmoothing, waterfallStates)
 		sm.cueMixUIs = append(sm.cueMixUIs, cueMixUI)
 	}
 
@@ -77,4 +83,16 @@ func (sm *SessionMixer) GetAllDeviceFaders() []*session.DeviceFader {
 		}
 	}
 	return faders
+}
+
+// GetWaterfallStates returns the current waterfall open/closed states for all channels.
+// Keys are "cueMixName/deviceName" or "cueMixName/master".
+func (sm *SessionMixer) GetWaterfallStates() map[string]bool {
+	states := make(map[string]bool)
+	for _, cueMixUI := range sm.cueMixUIs {
+		for key, value := range cueMixUI.GetWaterfallStates() {
+			states[key] = value
+		}
+	}
+	return states
 }

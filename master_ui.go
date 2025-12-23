@@ -40,10 +40,11 @@ type MasterUI struct {
 }
 
 // NewMasterUI creates a new master UI component for a cue mix.
-func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoothing int) *MasterUI {
+func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoothing int, showWaterfall bool) *MasterUI {
 	ui := &MasterUI{
-		cueMix: cueMix,
-		state:  state,
+		cueMix:        cueMix,
+		state:         state,
+		showWaterfall: showWaterfall,
 	}
 
 	// Collect level meter controls from mix outputs
@@ -217,6 +218,11 @@ func (ui *MasterUI) findMatchingDeviceName() string {
 	}
 
 	return ""
+}
+
+// IsWaterfallOpen returns whether the waterfall is currently shown
+func (ui *MasterUI) IsWaterfallOpen() bool {
+	return ui.showWaterfall
 }
 
 // GetVUMeterWidth returns the width of the VU meter section (for layout calculations)

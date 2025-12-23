@@ -25,20 +25,27 @@ type CueMixUI struct {
 }
 
 // NewCueMixUI creates a new UI component for a cue mix.
-func NewCueMixUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoothing int) *CueMixUI {
+// waterfallStates maps "cueMixName/deviceName" or "cueMixName/master" to open/closed state.
+func NewCueMixUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoothing int, waterfallStates map[string]bool) *CueMixUI {
 	ui := &CueMixUI{
 		cueMix:   cueMix,
 		expanded: true, // Start expanded
 	}
 
+	cueMixName := cueMix.Name()
+
 	// Create device fader UIs
 	for _, fader := range cueMix.Faders {
-		faderUI := NewDeviceFaderUI(fader, state, levelSmoothing)
+		key := cueMixName + "/" + fader.Name()
+		showWaterfall := waterfallStates[key]
+		faderUI := NewDeviceFaderUI(fader, state, levelSmoothing, showWaterfall)
 		ui.deviceFaders = append(ui.deviceFaders, faderUI)
 	}
 
 	// Create master UI
-	ui.masterUI = NewMasterUI(cueMix, state, levelSmoothing)
+	masterKey := cueMixName + "/master"
+	showMasterWaterfall := waterfallStates[masterKey]
+	ui.masterUI = NewMasterUI(cueMix, state, levelSmoothing, showMasterWaterfall)
 
 	return ui
 }
@@ -194,4 +201,27 @@ func (ui *CueMixUI) IsExpanded() bool {
 // SetExpanded sets the expanded state
 func (ui *CueMixUI) SetExpanded(expanded bool) {
 	ui.expanded = expanded
+}
+
+// GetWaterfallStates returns the waterfall open/closed states for this cue mix.
+// Keys are "cueMixName/deviceName" or "cueMixName/master".
+func (ui *CueMixUI) GetWaterfallStates() map[string]bool {
+	states := make(map[string]bool)
+	cueMixName := ui.cueMix.Name()
+
+	// Collect device fader states
+	for _, faderUI := range ui.deviceFaders {
+		key := cueMixName + "/" + faderUI.GetFader().Name()
+		if faderUI.IsWaterfallOpen() {
+			states[key] = true
+		}
+	}
+
+	// Collect master state
+	masterKey := cueMixName + "/master"
+	if ui.masterUI.IsWaterfallOpen() {
+		states[masterKey] = true
+	}
+
+	return states
 }

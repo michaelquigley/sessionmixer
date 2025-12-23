@@ -42,10 +42,11 @@ type DeviceFaderUI struct {
 }
 
 // NewDeviceFaderUI creates a new UI component for a device fader.
-func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, levelSmoothing int) *DeviceFaderUI {
+func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, levelSmoothing int, showWaterfall bool) *DeviceFaderUI {
 	ui := &DeviceFaderUI{
-		fader: fader,
-		state: state,
+		fader:         fader,
+		state:         state,
+		showWaterfall: showWaterfall,
 	}
 
 	// Collect level meter controls from device ports
@@ -326,6 +327,11 @@ func (ui *DeviceFaderUI) getLevelColor() *imgui.Vec4 {
 // GetFader returns the underlying device fader
 func (ui *DeviceFaderUI) GetFader() *session.DeviceFader {
 	return ui.fader
+}
+
+// IsWaterfallOpen returns whether the waterfall is currently shown
+func (ui *DeviceFaderUI) IsWaterfallOpen() bool {
+	return ui.showWaterfall
 }
 
 // GetColumnWidth returns the current column width needed for this fader

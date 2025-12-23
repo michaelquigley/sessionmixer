@@ -16,7 +16,8 @@ import (
 
 // uiConfig holds persistent UI state (window position, etc.)
 type uiConfig struct {
-	Window dfx.WindowConfig
+	Window     dfx.WindowConfig    `json:"window"`
+	Waterfalls map[string]bool     `json:"waterfalls,omitempty"` // key: "cueMixName/deviceName" or "cueMixName/master"
 }
 
 // defaultUIConfig returns sensible defaults for the UI configuration
@@ -120,8 +121,8 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 		fmt.Printf("warning: error loading UI config: %v\n", err)
 	}
 
-	// Create mixer UI
-	mixer := sessionmixer.NewSessionMixer(sess)
+	// Create mixer UI with saved waterfall states
+	mixer := sessionmixer.NewSessionMixer(sess, uiCfg.Waterfalls)
 
 	// Start event monitor for hardware change notifications
 	faders := mixer.GetAllDeviceFaders()
@@ -141,8 +142,9 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 		Y:      uiCfg.Window.Y,
 
 		OnClose: func(app *dfx.App) {
-			// Save window state on close
+			// Save window state and waterfall states on close
 			uiCfg.Window = dfx.CaptureWindowState(app)
+			uiCfg.Waterfalls = mixer.GetWaterfallStates()
 			if err := dfx.SaveJSON(uiCfgPath, uiCfg); err != nil {
 				fmt.Printf("warning: error saving UI config: %v\n", err)
 			}
