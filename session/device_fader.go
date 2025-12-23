@@ -11,7 +11,7 @@ import (
 // lastValue stores the cached fader value for bidirectional updates
 // This is stored in DeviceFader struct as an int64 field
 
-// InitializeFromHardware reads the initial value from hardware.
+// InitializeFromHardware reads the initial value from hardware and zeros cross inputs.
 // Should be called after building the session.
 func (df *DeviceFader) InitializeFromHardware() error {
 	if len(df.VolumeControls) == 0 {
@@ -25,6 +25,17 @@ func (df *DeviceFader) InitializeFromHardware() error {
 	}
 
 	atomic.StoreInt64(&df.lastValue, val)
+
+	// Zero out cross inputs for proper stereo separation
+	// (these are the "wrong" channels: L source in R mix, R source in L mix)
+	for _, crossInput := range df.CrossInputs {
+		if crossInput.VolumeControl != nil {
+			if err := crossInput.VolumeControl.SetValue(crossInput.VolumeControl.Min); err != nil {
+				log.Printf("Failed to zero cross input %s: %v", crossInput.VolumeControl.Name, err)
+			}
+		}
+	}
+
 	return nil
 }
 

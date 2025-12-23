@@ -171,28 +171,70 @@ func (b *SessionBuilder) createDeviceFader(device *Device, cueMix *CueMix) (*Dev
 		CueMix: cueMix,
 	}
 
-	// Find mix inputs for each device port in MixL
-	for _, port := range device.Ports {
-		mixInput := b.findMixInputForPort(cueMix.MixL, port)
-		if mixInput == nil {
-			return nil, fmt.Errorf("no mix input found for port %s in mix %s", port.ID, cueMix.MixL.ID)
-		}
-		fader.MixInputsL = append(fader.MixInputsL, mixInput)
-		if mixInput.VolumeControl != nil {
-			fader.VolumeControls = append(fader.VolumeControls, mixInput.VolumeControl)
-		}
-	}
+	// For stereo devices in stereo mixes, we need proper L/R mapping:
+	// - Left source (port 0) goes to left mix (MixL) only
+	// - Right source (port 1) goes to right mix (MixR) only
+	// - Cross inputs (L in MixR, R in MixL) should be zeroed
+	isStereoDeviceInStereoMix := device.IsStereo && cueMix.IsStereo && cueMix.MixR != nil
 
-	// For stereo cue mix, also find inputs in MixR
-	if cueMix.IsStereo && cueMix.MixR != nil {
+	if isStereoDeviceInStereoMix {
+		// Stereo device in stereo mix: proper L/R separation
+		leftPort := device.Ports[0]
+		rightPort := device.Ports[1]
+
+		// Left port -> MixL only
+		mixInputL := b.findMixInputForPort(cueMix.MixL, leftPort)
+		if mixInputL == nil {
+			return nil, fmt.Errorf("no mix input found for port %s in mix %s", leftPort.ID, cueMix.MixL.ID)
+		}
+		fader.MixInputsL = append(fader.MixInputsL, mixInputL)
+		if mixInputL.VolumeControl != nil {
+			fader.VolumeControls = append(fader.VolumeControls, mixInputL.VolumeControl)
+		}
+
+		// Right port -> MixR only
+		mixInputR := b.findMixInputForPort(cueMix.MixR, rightPort)
+		if mixInputR == nil {
+			return nil, fmt.Errorf("no mix input found for port %s in mix %s", rightPort.ID, cueMix.MixR.ID)
+		}
+		fader.MixInputsR = append(fader.MixInputsR, mixInputR)
+		if mixInputR.VolumeControl != nil {
+			fader.VolumeControls = append(fader.VolumeControls, mixInputR.VolumeControl)
+		}
+
+		// Zero out cross inputs: right port in MixL, left port in MixR
+		crossInputRL := b.findMixInputForPort(cueMix.MixL, rightPort) // R in L mix
+		crossInputLR := b.findMixInputForPort(cueMix.MixR, leftPort)  // L in R mix
+		if crossInputRL != nil && crossInputRL.VolumeControl != nil {
+			fader.CrossInputs = append(fader.CrossInputs, crossInputRL)
+		}
+		if crossInputLR != nil && crossInputLR.VolumeControl != nil {
+			fader.CrossInputs = append(fader.CrossInputs, crossInputLR)
+		}
+	} else {
+		// Mono device or mono mix: all ports go to all mixes (center pan)
 		for _, port := range device.Ports {
-			mixInput := b.findMixInputForPort(cueMix.MixR, port)
+			mixInput := b.findMixInputForPort(cueMix.MixL, port)
 			if mixInput == nil {
-				return nil, fmt.Errorf("no mix input found for port %s in mix %s", port.ID, cueMix.MixR.ID)
+				return nil, fmt.Errorf("no mix input found for port %s in mix %s", port.ID, cueMix.MixL.ID)
 			}
-			fader.MixInputsR = append(fader.MixInputsR, mixInput)
+			fader.MixInputsL = append(fader.MixInputsL, mixInput)
 			if mixInput.VolumeControl != nil {
 				fader.VolumeControls = append(fader.VolumeControls, mixInput.VolumeControl)
+			}
+		}
+
+		// For stereo cue mix with mono device, also add to MixR
+		if cueMix.IsStereo && cueMix.MixR != nil {
+			for _, port := range device.Ports {
+				mixInput := b.findMixInputForPort(cueMix.MixR, port)
+				if mixInput == nil {
+					return nil, fmt.Errorf("no mix input found for port %s in mix %s", port.ID, cueMix.MixR.ID)
+				}
+				fader.MixInputsR = append(fader.MixInputsR, mixInput)
+				if mixInput.VolumeControl != nil {
+					fader.VolumeControls = append(fader.VolumeControls, mixInput.VolumeControl)
+				}
 			}
 		}
 	}

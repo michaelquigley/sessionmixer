@@ -100,11 +100,17 @@ type DeviceFader struct {
 	CueMix *CueMix
 
 	// MixInputsL are the mix inputs in MixL for this device
-	// One input for mono device, two for stereo device
+	// For stereo device in stereo mix: only left port's input
+	// For mono device: single port's input
 	MixInputsL []*topology.MixInput
 
 	// MixInputsR are the mix inputs in MixR for this device (nil for mono cue mix)
+	// For stereo device in stereo mix: only right port's input
 	MixInputsR []*topology.MixInput
+
+	// CrossInputs are mix inputs that should be zeroed for stereo separation
+	// (right source in left mix, left source in right mix)
+	CrossInputs []*topology.MixInput
 
 	// VolumeControls are all the ALSA volume controls to gang together
 	// This includes both L and R mix inputs for stereo cue mixes
