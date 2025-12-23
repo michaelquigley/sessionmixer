@@ -25,6 +25,12 @@ type DeviceFaderUI struct {
 	// VU meter for device input levels
 	vuMeter *dfx.VUMeter
 
+	// VU waterfall for level history (optional, toggled by click)
+	vuWaterfall *dfx.VUWaterfall
+
+	// Whether waterfall is currently shown
+	showWaterfall bool
+
 	// Level meter controls (cached from device ports)
 	levelControls []*scarlettctl.Control
 
@@ -68,6 +74,7 @@ func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, l
 	if len(ui.levelControls) > 0 {
 		ui.vuMeter = dfx.NewVUMeter(len(ui.levelControls))
 		ui.vuMeter.Height = 300
+		ui.vuMeter.ChannelWidth = 20
 		ui.vuMeter.Mode = dfx.VUMeterHighres
 
 		// Label channels
@@ -83,6 +90,15 @@ func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, l
 			}
 		}
 		ui.vuMeter.SetLabels(labels)
+
+		// Create VU waterfall (same channel count, matching height)
+		ui.vuWaterfall = dfx.NewVUWaterfall(len(ui.levelControls))
+		ui.vuWaterfall.Height = 300
+		ui.vuWaterfall.ChannelWidth = 20
+		ui.vuWaterfall.ChannelGap = 4
+		ui.vuWaterfall.RowHeight = 1
+		ui.vuWaterfall.Highres = true
+		ui.vuWaterfall.SetHistorySize(300)
 	}
 
 	// Configure fader parameters with dB taper and display
@@ -130,9 +146,12 @@ func (ui *DeviceFaderUI) Draw(state *dfx.State) float32 {
 	max := ui.fader.Max()
 
 	// Update VU meter levels
+	levels := ui.getNormalizedLevels()
 	if ui.vuMeter != nil {
-		levels := ui.getNormalizedLevels()
 		ui.vuMeter.SetLevels(levels)
+	}
+	if ui.vuWaterfall != nil {
+		ui.vuWaterfall.SetLevels(levels)
 	}
 
 	// Calculate column width
@@ -141,10 +160,17 @@ func (ui *DeviceFaderUI) Draw(state *dfx.State) float32 {
 	if ui.vuMeter != nil {
 		vuWidth = ui.vuMeter.Width() + 8 // 8px gap
 	}
-	columnWidth := faderWidth + vuWidth + 16 // 16px padding
+	waterfallWidth := float32(0)
+	if ui.showWaterfall && ui.vuWaterfall != nil {
+		waterfallWidth = ui.vuWaterfall.Width() + 8 // 8px gap
+	}
+	columnWidth := faderWidth + vuWidth + waterfallWidth + 16 // 16px padding
 
-	// Draw label
+	// Draw label (click to toggle waterfall)
 	imgui.Text(name)
+	if imgui.IsItemClicked() {
+		ui.showWaterfall = !ui.showWaterfall
+	}
 
 	params := ui.params
 	newValue, changed := dfx.FaderI(
@@ -163,6 +189,12 @@ func (ui *DeviceFaderUI) Draw(state *dfx.State) float32 {
 	if ui.vuMeter != nil {
 		imgui.SameLine()
 		ui.vuMeter.Draw(state)
+	}
+
+	// Draw waterfall beside VU meter when enabled
+	if ui.showWaterfall && ui.vuWaterfall != nil {
+		imgui.SameLineV(0, 8) // 8px gap between VU meter and waterfall
+		ui.vuWaterfall.Draw(state)
 	}
 
 	// Draw value display
@@ -294,4 +326,18 @@ func (ui *DeviceFaderUI) getLevelColor() *imgui.Vec4 {
 // GetFader returns the underlying device fader
 func (ui *DeviceFaderUI) GetFader() *session.DeviceFader {
 	return ui.fader
+}
+
+// GetColumnWidth returns the current column width needed for this fader
+func (ui *DeviceFaderUI) GetColumnWidth() float32 {
+	faderWidth := float32(60.0)
+	vuWidth := float32(0)
+	if ui.vuMeter != nil {
+		vuWidth = ui.vuMeter.Width() + 8 // 8px gap after fader
+	}
+	waterfallWidth := float32(0)
+	if ui.showWaterfall && ui.vuWaterfall != nil {
+		waterfallWidth = ui.vuWaterfall.Width() + 8 // 8px gap between VU and waterfall
+	}
+	return faderWidth + vuWidth + waterfallWidth + 16 // 16px padding
 }

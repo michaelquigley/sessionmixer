@@ -35,6 +35,7 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 - **Mute with Routing** - Mute disconnects outputs by routing to "Off", unmute restores routing
 - **Non-Destructive Startup** - Respects existing hardware routing; mixes start muted if not already routed
 - **Level Metering** - Real-time VU meters for both device inputs and mix outputs
+- **VU Waterfall** - Optional scrolling level history display (click channel title to toggle)
 - **Level Smoothing** - Configurable ring buffer averaging for smooth meter response
 - **Bidirectional Sync** - Changes made externally (other software, hardware controls) are reflected in the UI
 - **YAML Configuration** - Simple, human-readable configuration files
@@ -177,6 +178,8 @@ Each cue mix appears as a collapsible section containing:
 - **Output VU meters** - Shows the mix output levels and configured outputs
 - **Mute button** - Disconnects outputs (routes to "Off") when muted
 - **Device faders** - One fader per device with input VU meters
+
+**VU Waterfall:** Click on any channel title (device name or output label) to toggle a scrolling level history display beside the VU meter. The waterfall shows level over time, with newest samples at the bottom scrolling upward.
 
 ### Behavior
 

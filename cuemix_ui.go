@@ -82,9 +82,16 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 
 	// Calculate column widths with padding for separators
 	numFaders := len(ui.deviceFaders)
-	faderWidth := float32(100)                    // Base width per device fader column
 	controlsWidth := float32(80)                  // Width for controls column
-	vuWidth := ui.masterUI.GetVUMeterWidth() + 20 // VU meter width + padding
+	vuWidth := ui.masterUI.GetVUMeterWidth() + 20 // VU meter width + padding (dynamic based on waterfall)
+
+	// Calculate per-fader widths (dynamic based on waterfall state)
+	faderWidths := make([]float32, numFaders)
+	totalFaderWidth := float32(0)
+	for i, faderUI := range ui.deviceFaders {
+		faderWidths[i] = faderUI.GetColumnWidth()
+		totalFaderWidth += faderWidths[i]
+	}
 
 	// Padding configuration: asymmetric around separators
 	// - Right padding (before separator): 25px
@@ -96,7 +103,7 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 
 	// Total columns: left padding + output VU + spacer + controls + spacer + device faders
 	totalColumns := numFaders + 5
-	totalWidth := leftPadding + vuWidth + sectionPadding + controlsWidth + sectionPadding + float32(numFaders)*faderWidth + 50
+	totalWidth := leftPadding + vuWidth + sectionPadding + controlsWidth + sectionPadding + totalFaderWidth + 50
 
 	// Create a table for layout (no borders - we'll draw our own)
 	if imgui.BeginTableV(fmt.Sprintf("##cuemix_table_%p", ui), int32(totalColumns), imgui.TableFlagsNone, imgui.Vec2{X: totalWidth, Y: 0}, 0) {
@@ -110,9 +117,9 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 		imgui.TableSetupColumnV("##col_controls", imgui.TableColumnFlagsWidthFixed, controlsWidth, 0)
 		// Spacer column after controls
 		imgui.TableSetupColumnV("##col_spacer2", imgui.TableColumnFlagsWidthFixed, sectionPadding, 0)
-		// Device faders (rightmost)
+		// Device faders (rightmost) - each with its own dynamic width
 		for i := range ui.deviceFaders {
-			imgui.TableSetupColumnV(fmt.Sprintf("##col_fader_%d", i), imgui.TableColumnFlagsWidthFixed, faderWidth, 0)
+			imgui.TableSetupColumnV(fmt.Sprintf("##col_fader_%d", i), imgui.TableColumnFlagsWidthFixed, faderWidths[i], 0)
 		}
 
 		// Draw row

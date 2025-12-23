@@ -23,6 +23,12 @@ type MasterUI struct {
 	// VU meter for mix output levels
 	vuMeter *dfx.VUMeter
 
+	// VU waterfall for level history (optional, toggled by click)
+	vuWaterfall *dfx.VUWaterfall
+
+	// Whether waterfall is currently shown
+	showWaterfall bool
+
 	// Level meter controls for mix outputs
 	levelControls []*scarlettctl.Control
 
@@ -77,6 +83,15 @@ func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoot
 			labels[1] = "R"
 		}
 		ui.vuMeter.SetLabels(labels)
+
+		// Create VU waterfall (same channel count, matching height)
+		ui.vuWaterfall = dfx.NewVUWaterfall(len(ui.levelControls))
+		ui.vuWaterfall.Height = 303
+		ui.vuWaterfall.ChannelWidth = 20
+		ui.vuWaterfall.ChannelGap = 4
+		ui.vuWaterfall.RowHeight = 1
+		ui.vuWaterfall.Highres = true
+		ui.vuWaterfall.SetHistorySize(303)
 	}
 
 	return ui
@@ -138,25 +153,41 @@ func (ui *MasterUI) DrawControls(state *dfx.State) {
 // DrawOutputVU renders the output VU meters.
 func (ui *MasterUI) DrawOutputVU(state *dfx.State) {
 	// Update VU meter levels
+	levels := ui.getNormalizedLevels()
 	if ui.vuMeter != nil {
-		levels := ui.getNormalizedLevels()
 		ui.vuMeter.SetLevels(levels)
 	}
+	if ui.vuWaterfall != nil {
+		ui.vuWaterfall.SetLevels(levels)
+	}
 
-	// Display configured outputs
+	// Display configured outputs (click to toggle waterfall)
 	// Check if outputs match a device definition
 	if deviceName := ui.findMatchingDeviceName(); deviceName != "" {
 		imgui.Text(deviceName)
+		if imgui.IsItemClicked() {
+			ui.showWaterfall = !ui.showWaterfall
+		}
 	} else {
 		// Fall back to individual port short names
-		for _, port := range ui.cueMix.Outputs {
+		for i, port := range ui.cueMix.Outputs {
 			imgui.Text(port.ShortName)
+			// Only first label is clickable to toggle
+			if i == 0 && imgui.IsItemClicked() {
+				ui.showWaterfall = !ui.showWaterfall
+			}
 		}
 	}
 
 	// Output VU meters
 	if ui.vuMeter != nil {
 		ui.vuMeter.Draw(state)
+	}
+
+	// Draw waterfall beside VU meter when enabled
+	if ui.showWaterfall && ui.vuWaterfall != nil {
+		imgui.SameLineV(0, 8) // 8px gap between VU meter and waterfall
+		ui.vuWaterfall.Draw(state)
 	}
 }
 
@@ -188,12 +219,17 @@ func (ui *MasterUI) findMatchingDeviceName() string {
 	return ""
 }
 
-// GetVUMeterWidth returns the width of the VU meter (for layout calculations)
+// GetVUMeterWidth returns the width of the VU meter section (for layout calculations)
+// Includes waterfall width when shown
 func (ui *MasterUI) GetVUMeterWidth() float32 {
+	width := float32(40) // Default width if no VU meter
 	if ui.vuMeter != nil {
-		return ui.vuMeter.Width()
+		width = ui.vuMeter.Width()
 	}
-	return 40 // Default width if no VU meter
+	if ui.showWaterfall && ui.vuWaterfall != nil {
+		width += 8 + ui.vuWaterfall.Width() // 8px gap between VU and waterfall
+	}
+	return width
 }
 
 // getNormalizedLevels returns level values normalized to 0.0-1.0 using dB scale
