@@ -20,7 +20,9 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 
 ### Supported Hardware
 
-- **Focusrite Scarlett** (4th generation) - Tested with 16i16 and 18i20
+- **Focusrite Scarlett** (4th generation)
+  - 18i20 (firmware 2399 and 2464)
+  - 16i16 (firmware 2464)
 - Additional interface support planned for future releases
 
 ## Features
