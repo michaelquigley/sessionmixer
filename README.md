@@ -72,69 +72,42 @@ sessionmixer uses a YAML configuration file located at:
 ### Example Configuration
 
 ```yaml
-# ALSA card number (use `aplay -l` to find your device)
+# ALSA card number
 card: 1
 
-# VU meter smoothing (number of samples to average, 0 = disabled)
+# control the smoothing rate on the vu meters (0 to disable smoothing)
 level_smoothing: 8
 
-# Device definitions - named audio sources mapped to hardware ports
+# identify external devices and map them to interface ports
 devices:
-  # Stereo devices (2 ports)
-  - name: "DAW L+R"
-    ports:
-      - pcm-playback-1
-      - pcm-playback-2
+  # logical outputs
+  - name: AES Out
+    ports: [spdif-out-1, spdif-out-2]
+  - name: Hdph 1
+    ports: [analogue-out-11, analogue-out-12]
 
-  - name: "Guitar FX"
-    ports:
-      - pcm-playback-3
-      - pcm-playback-4
+  # logical audio sources
+  - name: Playback
+    ports: [pcm-playback-1, pcm-playback-2]
+  - name: FM3
+    ports: [analogue-in-1]
+  - name: NaN
+    ports: [spdif-in-1, spdif-in-2]
 
-  # Mono devices (1 port)
-  - name: "Vocal Mic"
-    ports:
-      - analogue-in-1
-
-  - name: "Talkback"
-    ports:
-      - analogue-in-2
-
-  # Output devices (for routing shorthand)
-  - name: "S/PDIF"
-    ports:
-      - spdif-out-1
-      - spdif-out-2
-
-# Cue mix allocations
+# create cue mixes, assign them to one or more outputs, and identify which sources should be mixed
 cue_mixes:
-  # Main monitors - full mix
-  - name: "Main Monitors"
-    mix_pair: "A+B"           # Stereo pair using Mix A and Mix B
-    outputs:
-      - analogue-out-1        # Left output
-      - analogue-out-2        # Right output
-    devices:
-      - "DAW L+R"
-      - "Guitar FX"
-      - "Vocal Mic"
+  # a separate mix for my headphones
+  - name: "Headphones"
+    mix_pair: A+B
+    outputs: [Hdph 1]
+    devices: [Playback, NaN, FM3]
 
-  # Performer cue - DAW and talkback only
-  - name: "Performer Cue"
-    mix_pair: "C+D"
-    outputs:
-      - analogue-out-3
-      - analogue-out-4
-    devices:
-      - "DAW L+R"
-      - "Talkback"
+  # a separate mix for my main monitors
+  - name: "Mains"
+    mix_pair: C+D
+    outputs: [AES Out]
+    devices: [Playback, NaN, FM3]
 
-  # S/PDIF feed using device name for outputs
-  - name: "S/PDIF Feed"
-    mix_pair: "E+F"
-    outputs: ["S/PDIF"]       # References the S/PDIF device
-    devices:
-      - "DAW L+R"
 ```
 
 ### Configuration Reference
