@@ -8,20 +8,13 @@
 
 ### Layer Overview
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    UI Layer                         │
-│  SessionMixer, CueMixUI, DeviceFaderUI, MasterUI   │
-├─────────────────────────────────────────────────────┤
-│                  Session Layer                      │
-│  Session, Device, CueMix, DeviceFader              │
-├─────────────────────────────────────────────────────┤
-│                 Topology Layer                      │
-│  Device, Port, Mix, MixInput, RoutingEndpoint      │
-├─────────────────────────────────────────────────────┤
-│                Hardware (ALSA)                      │
-│  scarlettctl.Card, scarlettctl.Control             │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    ui["UI Layer<br/>SessionMixer, CueMixUI, DeviceFaderUI, MasterUI"]
+    session["Session Layer<br/>Session, Device, CueMix, DeviceFader"]
+    topology["Topology Layer<br/>Device, Port, Mix, MixInput, RoutingEndpoint"]
+    hardware["Hardware (ALSA)<br/>scarlettctl.Card, scarlettctl.Control"]
+    ui --> session --> topology --> hardware
 ```
 
 ### Session Layer
@@ -136,49 +129,50 @@ Use `sessionmixer topology` to see available ports.
 ## Data Flow
 
 **UI → Hardware:**
-```
-User drags fader
-  → DeviceFaderUI detects change
-  → DeviceFader.HandleUIChange(newValue)
-  → Value equality check
-  → Write to all ganged VolumeControls
-  → ALSA write to hardware
+```mermaid
+flowchart TD
+    drag["User drags fader"] --> detect["DeviceFaderUI detects change"]
+    detect --> handle["DeviceFader.HandleUIChange(newValue)"]
+    handle --> eq["Value equality check"]
+    eq --> gang["Write to all ganged VolumeControls"]
+    gang --> alsa["ALSA write to hardware"]
 ```
 
 **Hardware → UI:**
-```
-External control change
-  → ALSA event
-  → SessionEventMonitor.handleControlChange()
-  → DeviceFader.HandleHWChange(numID, value)
-  → Value equality check (breaks feedback loop)
-  → Atomic update of cached value
-  → Next Draw() uses new value
+```mermaid
+flowchart TD
+    ext["External control change"] --> event["ALSA event"]
+    event --> monitor["SessionEventMonitor.handleControlChange()"]
+    monitor --> handle["DeviceFader.HandleHWChange(numID, value)"]
+    handle --> eq["Value equality check (breaks feedback loop)"]
+    eq --> cache["Atomic update of cached value"]
+    cache --> draw["Next Draw() uses new value"]
 ```
 
 **Mute:**
-```
-User clicks MUTE
-  → CueMix.SetMuted(true)
-  → Save current routing to savedRouting
-  → Route all outputs to "Off"
-  → Update endpoint cached state
-
-User clicks UNMUTE
-  → CueMix.SetMuted(false)
-  → Restore routing from savedRouting
-  → Update endpoint cached state
+```mermaid
+flowchart TD
+    subgraph mute["User clicks MUTE"]
+        m1["CueMix.SetMuted(true)"] --> m2["Save current routing to savedRouting"]
+        m2 --> m3["Route all outputs to 'Off'"]
+        m3 --> m4["Update endpoint cached state"]
+    end
+    subgraph unmute["User clicks UNMUTE"]
+        u1["CueMix.SetMuted(false)"] --> u2["Restore routing from savedRouting"]
+        u2 --> u3["Update endpoint cached state"]
+    end
 ```
 
 **Startup Routing:**
-```
-Application starts
-  → CueMix.InitializeFromHardware()
-  → Read current routing from hardware
-  → Compare to expected routing (Mix A, Mix B, etc.)
-  → If matches: mix is active (unmuted)
-  → If doesn't match: mix starts muted, expected routing saved for later
-  → Hardware routing is NOT modified on startup
+```mermaid
+flowchart TD
+    start["Application starts"] --> init["CueMix.InitializeFromHardware()"]
+    init --> read["Read current routing from hardware"]
+    read --> cmp{"Matches expected routing?<br/>(Mix A, Mix B, etc.)"}
+    cmp -->|yes| active["Mix is active (unmuted)"]
+    cmp -->|no| muted["Mix starts muted;<br/>expected routing saved for later"]
+    active --> untouched["Hardware routing is NOT modified on startup"]
+    muted --> untouched
 ```
 
 ## Building & Running
