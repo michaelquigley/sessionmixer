@@ -3,9 +3,9 @@ module github.com/michaelquigley/sessionmixer
 go 1.25.4
 
 require (
-	github.com/AllenDang/cimgui-go v1.4.0
+	github.com/AllenDang/cimgui-go v1.5.0
 	github.com/charmbracelet/fang v0.4.4
-	github.com/michaelquigley/df v0.3.7
+	github.com/michaelquigley/df v1.0.0
 	github.com/michaelquigley/dfx v0.1.0
 	github.com/michaelquigley/scarlettctl v0.0.0-20251222174232-47b12a907405
 	github.com/pkg/errors v0.9.1
