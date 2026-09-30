@@ -5,4 +5,5 @@ go.work
 go.work.sum
 *.drawio.bkp
 .claude
-CLAUDE.md
+.codex
+AGENTS.md
