@@ -1,283 +1,58 @@
-# sessionmixer - Development Notes
+# sessionmixer
 
-## Overview
+A desktop mixer control surface for audio interfaces with onboard DSP mixing, built with Go and dfx: named devices over the hardware's ports, stereo cue mixes over its mix buses, mute as routing, bidirectional sync with the hardware, and level metering. Today that means Focusrite Scarlett 4th-generation interfaces through `scarlettctl`. A personal studio tool, published as open source.
 
-`sessionmixer` is a custom mixer control surface application for Focusrite Scarlett audio interfaces. It uses the `dfx` immediate-mode GUI framework to provide a simplified, configurable interface for controlling hardware mixer settings via `scarlettctl`.
+## Status
 
-## Architecture
+The mixer is built and in daily use: device and cue mix configuration, stereo ganging, mute as routing, non-destructive startup, VU meters and the waterfall, and bidirectional sync. `docs/current/` is the record of what exists and how it behaves. No release has been tagged; `CHANGELOG.md` accumulates under `## Unreleased`. What is ahead is on the roadmap.
 
-### Layer Overview
+## Stack
 
-```mermaid
-flowchart TD
-    ui["UI Layer<br/>SessionMixer, CueMixUI, DeviceFaderUI, MasterUI"]
-    session["Session Layer<br/>Session, Device, CueMix, DeviceFader"]
-    topology["Topology Layer<br/>Device, Port, Mix, MixInput, RoutingEndpoint"]
-    hardware["Hardware (ALSA)<br/>scarlettctl.Card, scarlettctl.Control"]
-    ui --> session --> topology --> hardware
-```
+- Go, single module `github.com/michaelquigley/sessionmixer`.
+- cgo, through `scarlettctl`, against libasound (ALSA). The hardware is reached only through `scarlettctl.Card` and `scarlettctl.Control`.
+- `github.com/spf13/cobra` with `charmbracelet/fang` for the CLI. `github.com/michaelquigley/df/dl` for logging, `github.com/michaelquigley/df/dd` for configuration, `github.com/pkg/errors` for wrapping.
+- dfx (`github.com/michaelquigley/dfx`) for the ui, pinned at a tag; `scarlettctl` pinned at a commit.
+- `go.mod` carries no `replace` directives. The module builds from published versions, because CI and patchbay (which imports `sessionmixer/topology`) consume it from GitHub. To develop dfx or scarlettctl in lockstep, use a `go.work` (ignored by git), and bump the pin once the dependency is tagged or pushed.
 
-### Session Layer
+## Building
 
-The session layer provides user-friendly abstractions for devices and cue mixes.
+- `make` installs, `make test` runs tests plus `go vet`, `make clean` clears the project GOBIN.
+- The machine needs `libasound2-dev`, and the X11 and OpenGL development packages dfx's GLFW backend links against.
+- `sessionmixer run` opens the window against the card named in `~/.config/sessionmixer/session.yaml` (`etc/example-config.yaml` is the shape). `sessionmixer topology` prints what the card exposes. Nothing in `go test` touches hardware.
 
-**Key Concepts:**
+## Layout
 
-1. **Devices** - Named audio sources mapped to topology ports
-   - Examples: "DAW L+R" (pcm-playback-1, pcm-playback-2), "Vocal Mic" (analogue-in-1)
-   - Can be mono (1 port) or stereo (2 ports)
-   - Can represent inputs (for faders) or outputs (for routing)
+- `cmd/sessionmixer/` — cobra entry: `run` opens the window; `topology` prints the discovered device (`--routing`, `--mixes`, `--meters`); `desktop integrate` and `desktop remove` install and remove the Linux launcher entry and icon for the running binary.
+- `session/` — the user-facing model: `SessionConfig`, `Device`, `CueMix`, `DeviceFader`, the builder that resolves configuration against the topology, mute and routing (`cuemix.go`), and the bidirectional fader (`device_fader.go`).
+- `topology/` — the hardware model: `Port`, `Mix`, `MixInput`, `RoutingEndpoint`, `Device`, `DeviceState`; `builder.go` discovers a device from a profile; `detect.go` picks the profile by card name and firmware. `topology/profiles/` holds one profile per device and firmware variant, registered in `init()`.
+- The root package is the ui: `mixer.go` (`SessionMixer`), `cuemix_ui.go`, `device_fader_ui.go`, `master_ui.go`, `session_monitor.go` (ALSA events into faders), and the shared meter and ring buffer pieces.
+- `docs/current/` — built behavior, including the per-device control layouts the profiles were written from. `docs/future/roadmap/` — the roadmap. `docs/journal/` — project memory.
 
-2. **Cue Mixes** - Stereo mix allocations routed to hardware outputs
-   - Uses mix pairs (A+B, C+D, etc.) for stereo
-   - Contains device faders for volume control
-   - Mute function disconnects outputs (routes to "Off")
-   - Stereo mixes are automatically ganged
-   - Respects existing hardware routing on startup
+## Key conventions
 
-**Session Layer Files:**
-- `session/types.go` - Config structs (SessionConfig, DeviceConfig, CueMixConfig)
-- `session/session.go` - Runtime types (Session, Device, CueMix, DeviceFader)
-- `session/builder.go` - SessionBuilder resolves config to topology
-- `session/config.go` - Config loading
-- `session/device_fader.go` - Bidirectional fader control
-- `session/cuemix.go` - Mute and routing management
+- **Value equality breaks the feedback loop.** A ui write reaches the hardware, the hardware fires an event with the same value, and the handler returns early because old equals new. No debouncing, no locks. `docs/current/BIDIRECTIONAL_UPDATE_STRATEGY.md` is the full account; keep the equality checks when touching `DeviceFader.HandleUIChange` or `HandleHWChange`.
+- **Mute is routing, and the endpoint cache follows it.** Muting saves each output's source and routes it to `Off`; unmuting restores. Both must update the endpoint's cached `currentSourceIndex`, or the next cycle misbehaves.
+- **Startup never writes routing.** A cue mix whose outputs already carry its mixes starts active; otherwise it starts muted with the expected routing saved for unmute. The hardware is read, not modified.
+- **Stereo is ganged.** A stereo cue mix (`A+B`) with a stereo device drives Mix A's input for the left port and Mix B's for the right from one fader; a mono device drives the same input in both mixes.
+- **Outputs accept device names.** A cue mix's `outputs` may name raw ports or a device; a device name wins a naming conflict.
+- **Profiles are keyed by firmware.** Several profiles can describe one card at different firmware versions; add a variant as a new file in `topology/profiles/` registered with its firmware in `init()`.
+- **The desktop id is one string.** `desktopID` in `cmd/sessionmixer/desktop.go` names the entry and the icon, and `run.go` passes the same constant as dfx's `AppID`, so the desktop pairs the running window with its entry.
+- Comments are lowercase except doc comments, which lead with the identifier.
+- **Changelog.** `CHANGELOG.md` follows the in-house convention: newest-first releases, prose entries each led by one of `FEATURE`/`CHANGE`/`FIX`, and an `## Unreleased` slot at the top that agents write into. The full spec is the grimoire's `software/conventions/changelog-convention.md`.
 
-**UI Components:**
-- `mixer.go` - Main SessionMixer component
-- `cuemix_ui.go` - Collapsible cue mix section with dynamic column layout
-- `device_fader_ui.go` - Device fader with VU meter and optional VU waterfall
-- `master_ui.go` - Mute button, output VU meters, and optional VU waterfall
-- `session_monitor.go` - Hardware event monitoring for session faders
+## Review
 
-### Topology Layer
+A change is gated by terminus over the working tree, against sessionmixer's canon (`terminus-canon/projects/sessionmixer`): run it before handing off, present each finding for Michael's decision (apply, adjust, or veto), and bring it to clean. A vetoed finding may be raised again; report it as vetoed. Full-repo reviews are maintenance, run only on request. Their findings are filed as roadmap cards in `inbox`, not fixed in passing. Until the canon project exists, say so in the handoff rather than skipping silently.
 
-The topology layer models the hardware capabilities of Scarlett interfaces.
+## Roadmap
 
-**Key Types:**
-- `Port` - Mono audio channel (analogue-in-1, pcm-playback-1, etc.)
-- `Mix` - Mixer bus (A-L) with inputs
-- `MixInput` - Single input to a mix with volume control
-- `RoutingEndpoint` - Routable destination with source enum
-- `Device` - Complete hardware topology
-- `DeviceState` - Runtime state (levels, gang state)
-- `DeviceProfile` - Device capability definitions
+This repo's roadmap lives in `docs/future/roadmap/` — one frontmatter-markdown item per file, per the roadmap convention in the grimoire (software/conventions/roadmap-convention.md). You may add items freely: write the file directly with required `title`, `state: inbox`, and `created:` (today, YYYY-MM-DD), optional `tags`/`source`/`log`, and a body that is a small, clear prompt -- the problem or solution to execute, not documentation of it; trust the code and the day's journal entry for what's discoverable, and point a `log:` stamp at the specific journal entry when a card leans on hard-won context. Everything above the first `##` heading is the prompt; supporting material that isn't the prompt goes in named sections below it (`## why` for justification, `## background` for a longer description), which are conventional, never required, and never validated. The filename is the slug of the title (lowercase ASCII, hyphens; discard every other character); never overwrite an existing file. Read sibling items for the shape.
 
-**Topology Files:**
-- `topology/types.go` - Core types
-- `topology/device.go` - Device structure and queries
-- `topology/state.go` - Runtime state tracking
-- `topology/profile.go` - DeviceProfile interface
-- `topology/builder.go` - DeviceBuilder
-- `topology/detect.go` - Profile auto-detection
-- `topology/profiles/*.go` - Device-specific profiles
+Hard rules: never touch `order.yaml` (priority is the operator's judgment, set at triage); never commit roadmap changes unless directed — the uncommitted diff is the review queue; never delete items; edits change only the lines that express them. Label the kind from the house set when one fits: defect, documentation, enhancement, epic, feature, story; add `spike` alongside it when the work carries unknowns that need discovery.
 
-## Configuration
+## For agents arriving cold
 
-**Location:** `~/.config/sessionmixer/session.yaml`
-
-**Structure:**
-```yaml
-card: 1                    # ALSA card number
-level_smoothing: 8         # VU meter smoothing samples (0 = disabled)
-
-# Device definitions - named sources/destinations mapped to ports
-devices:
-  # Input devices (for faders)
-  - name: "DAW L+R"
-    ports:
-      - pcm-playback-1
-      - pcm-playback-2
-
-  - name: "Vocal Mic"
-    ports:
-      - analogue-in-1
-
-  # Output devices (for routing)
-  - name: "S/PDIF"
-    ports:
-      - spdif-out-1
-      - spdif-out-2
-
-# Cue mix allocations
-cue_mixes:
-  - name: "Main Monitors"
-    mix_pair: "A+B"        # Stereo pair (Mix A + Mix B)
-    outputs:
-      - analogue-out-1
-      - analogue-out-2
-    devices:
-      - "DAW L+R"
-      - "Vocal Mic"
-
-  - name: "S/PDIF Feed"
-    mix_pair: "C+D"
-    outputs: ["S/PDIF"]    # Can reference device names for outputs
-    devices:
-      - "DAW L+R"
-```
-
-**Port ID Format:**
-- `analogue-in-1` through `analogue-in-9`
-- `analogue-out-1` through `analogue-out-14`
-- `spdif-in-1`, `spdif-in-2`, `spdif-out-1`, `spdif-out-2`
-- `adat-in-1` through `adat-in-8`
-- `pcm-playback-1` through `pcm-playback-24`
-
-Use `sessionmixer topology` to see available ports.
-
-## Data Flow
-
-**UI → Hardware:**
-```mermaid
-flowchart TD
-    drag["User drags fader"] --> detect["DeviceFaderUI detects change"]
-    detect --> handle["DeviceFader.HandleUIChange(newValue)"]
-    handle --> eq["Value equality check"]
-    eq --> gang["Write to all ganged VolumeControls"]
-    gang --> alsa["ALSA write to hardware"]
-```
-
-**Hardware → UI:**
-```mermaid
-flowchart TD
-    ext["External control change"] --> event["ALSA event"]
-    event --> monitor["SessionEventMonitor.handleControlChange()"]
-    monitor --> handle["DeviceFader.HandleHWChange(numID, value)"]
-    handle --> eq["Value equality check (breaks feedback loop)"]
-    eq --> cache["Atomic update of cached value"]
-    cache --> draw["Next Draw() uses new value"]
-```
-
-**Mute:**
-```mermaid
-flowchart TD
-    subgraph mute["User clicks MUTE"]
-        m1["CueMix.SetMuted(true)"] --> m2["Save current routing to savedRouting"]
-        m2 --> m3["Route all outputs to 'Off'"]
-        m3 --> m4["Update endpoint cached state"]
-    end
-    subgraph unmute["User clicks UNMUTE"]
-        u1["CueMix.SetMuted(false)"] --> u2["Restore routing from savedRouting"]
-        u2 --> u3["Update endpoint cached state"]
-    end
-```
-
-**Startup Routing:**
-```mermaid
-flowchart TD
-    start["Application starts"] --> init["CueMix.InitializeFromHardware()"]
-    init --> read["Read current routing from hardware"]
-    read --> cmp{"Matches expected routing?<br/>(Mix A, Mix B, etc.)"}
-    cmp -->|yes| active["Mix is active (unmuted)"]
-    cmp -->|no| muted["Mix starts muted;<br/>expected routing saved for later"]
-    active --> untouched["Hardware routing is NOT modified on startup"]
-    muted --> untouched
-```
-
-## Building & Running
-
-```bash
-# Build
-go build ./cmd/sessionmixer
-
-# Run mixer GUI
-./sessionmixer run
-
-# Inspect device topology
-./sessionmixer topology
-./sessionmixer topology --routing
-./sessionmixer topology --mixes
-./sessionmixer topology --meters
-```
-
-## Device Profiles
-
-Supported devices:
-- **Scarlett 18i20 Gen 4 (FW 2399)** - 69 level meters, 12 mixes, 20 PCM capture
-- **Scarlett 18i20 Gen 4 (FW 2464)** - 69 level meters, 12 mixes, 26 PCM playback/capture, 16 ADAT I/O
-- **Scarlett 16i16 Gen 4** - 54 level meters, 12 mixes
-
-Profiles are automatically selected based on card name and firmware version. Multiple profiles can exist for the same device with different firmware versions.
-
-To add a new device or firmware variant:
-1. Create `topology/profiles/scarlett_XXX.go`
-2. Implement `DeviceProfile` interface
-3. Register with specific firmware version in `init()` function
-4. Profile auto-detects via card name and firmware version match
-
-## Dependencies
-
-- `github.com/michaelquigley/dfx` - Immediate mode GUI
-- `github.com/michaelquigley/scarlettctl` - Focusrite control library
-- `github.com/michaelquigley/df/dd` - Configuration loading
-- `github.com/AllenDang/cimgui-go/imgui` - ImGui bindings
-
-## Developer Notes
-
-### Bidirectional Updates
-
-The key to preventing feedback loops is value equality checks:
-1. UI writes value X to hardware
-2. Hardware fires event with value X
-3. Event handler sees oldValue == newValue
-4. Returns early - no UI update triggered
-5. Loop broken
-
-### Stereo Ganging
-
-For stereo cue mixes (A+B) with stereo devices:
-- Mix A Input 01 (pcm-playback-1) and Mix B Input 02 (pcm-playback-2)
-- Single fader controls both volume controls
-
-For mono devices in stereo cue mixes:
-- Same input number in both mixes
-- Both volumes ganged together
-
-### Level Metering
-
-- 96 dB dynamic range for sensitivity
-- HSV color gradient: green → yellow → red
-- Optional ring buffer smoothing
-- VU meters: highres mode with 1px segments and 1px gaps
-
-### VU Waterfall
-
-The VU waterfall displays level history over time, scrolling upward with newest data at the bottom.
-
-**Toggle:** Click on any channel title (device name or output label) to show/hide the waterfall.
-
-**Implementation details:**
-- Uses `dfx.VUWaterfall` component
-- Time-based sampling (16ms interval) for consistent scroll speed regardless of frame rate
-- Highres mode: alternates row opacity (30% on odd rows) for scanline effect
-- 1px row height, matching VU meter aesthetic
-- Dynamic column width adjustment when waterfall is shown/hidden
-- History stored in circular buffer (300 samples for device faders, 303 for master)
-
-### Mute State and Routing
-
-The mute implementation must keep the endpoint's cached `currentSourceIndex` synchronized:
-- When muting: save current source, set to "Off", update cache
-- When unmuting: restore saved source, update cache
-- Failure to update cache causes incorrect behavior on subsequent mute/unmute cycles
-
-### Device Names in Outputs
-
-The `outputs` field in cue mix config supports both:
-- Raw port IDs: `["analogue-out-1", "analogue-out-2"]`
-- Device names: `["S/PDIF"]` (expands to device's ports)
-
-Device names take precedence if there's a naming conflict.
-
-## References
-
-- [docs/BIDIRECTIONAL_UPDATE_STRATEGY.md](docs/BIDIRECTIONAL_UPDATE_STRATEGY.md)
-- [docs/18i20g4-2399-layout.md](docs/18i20g4-2399-layout.md)
-- [docs/18i20g4-2464-layout.md](docs/18i20g4-2464-layout.md)
-- [docs/16i16g4-layout.md](docs/16i16g4-layout.md)
-- [dfx documentation](https://github.com/michaelquigley/dfx)
-- [scarlettctl documentation](https://github.com/michaelquigley/scarlettctl)
+This is `sessionmixer`, part of Michael Quigley's broader software practice. Related projects (`dfx`, `scarlettctl`, `patchbay`, `mercurius`, `terminus`) live as siblings in `~/Repos/q/products/`; patchbay is the other consumer of `topology`, so a change to that package's exported surface is a change to patchbay. The grimoire at `~/Repos/q/writing/grimoire` holds cross-project conventions; for sessionmixer, the in-repo `docs/` is authoritative. If you've been assigned a role, read the grimoire's `agents/agent-roles.md`.
 
 ## Project memory
 
@@ -299,9 +74,3 @@ Skip change inventories, restatements of the diff, and play-by-play of how you w
 ## Commits
 
 The operator commits; agents don't. Never run `git commit` or `git push` in this repo. Finish the edit, leave the change in the working tree (staged is fine), report what changed, and hand off — the uncommitted diff is the review queue and the commit is the operator's act of acceptance. Approval of a change is not direction to commit; only an explicit instruction to commit is, and only for that commit.
-
-## Roadmap
-
-This repo's roadmap lives in `docs/future/roadmap/` — one frontmatter-markdown item per file, per the roadmap convention in the grimoire (software/conventions/roadmap-convention.md). You may add items freely: write the file directly with required `title`, `state: inbox`, and `created:` (today, YYYY-MM-DD), optional `tags`/`source`/`log`, and a body that is a small, clear prompt -- the problem or solution to execute, not documentation of it; trust the code and the day's journal entry for what's discoverable, and point a `log:` stamp at the specific journal entry when a card leans on hard-won context. Everything above the first `##` heading is the prompt; supporting material that isn't the prompt goes in named sections below it (`## why` for justification, `## background` for a longer description), which are conventional, never required, and never validated. The filename is the slug of the title (lowercase ASCII, hyphens; discard every other character); never overwrite an existing file. Read sibling items for the shape.
-
-Hard rules: never touch `order.yaml` (priority is the operator's judgment, set at triage); never commit roadmap changes unless directed — the uncommitted diff is the review queue; never delete items; edits change only the lines that express them. Label the kind from the house set when one fits: defect, documentation, enhancement, epic, feature, story; add `spike` alongside it when the work carries unknowns that need discovery.

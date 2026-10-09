@@ -6,4 +6,5 @@ go.work.sum
 *.drawio.bkp
 .claude
 .codex
-AGENTS.md
+.mercurius
+mercurius.yaml

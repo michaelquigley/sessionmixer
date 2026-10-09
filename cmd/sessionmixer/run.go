@@ -136,6 +136,7 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 
 	app := dfx.New(mixer, dfx.Config{
 		Title:  "SessionMixer",
+		AppID:  desktopID, // the desktop entry's name (desktop.go); pairs the window with it
 		Width:  uiCfg.Window.Width,
 		Height: uiCfg.Window.Height,
 		X:      uiCfg.Window.X,

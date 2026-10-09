@@ -4,7 +4,7 @@ A lightweight, configurable desktop mixer for controlling cue mixes and audio ro
 
 ## Project Roadmap
 
-Take a look at the [project roadmap board](https://github.com/users/michaelquigley/projects/3/views/1) to better understand what's on deck for sessionmixer.
+What's on deck lives in the repository, one item per file under [docs/future/roadmap/](docs/future/roadmap/).
 
 ## Demo
 
@@ -43,7 +43,7 @@ Whether you're managing monitor mixes in a recording session, routing audio for 
 ## Requirements
 
 - **Linux** with ALSA
-- **Go 1.24+** (for building from source)
+- **Go 1.25+** (for building from source)
 - A supported audio interface
 
 ### Dependencies
@@ -57,12 +57,14 @@ sessionmixer uses [scarlettctl](https://github.com/michaelquigley/scarlettctl) t
 git clone https://github.com/michaelquigley/sessionmixer.git
 cd sessionmixer
 
-# Build
-go build ./cmd/sessionmixer
+# Build and install into your GOPATH's bin
+make
 
-# Install (optional)
-sudo cp sessionmixer /usr/local/bin/
+# Optional: add a launcher entry and icon for this binary to the Linux desktop
+sessionmixer desktop integrate
 ```
+
+Building needs `libasound2-dev` and the X11 and OpenGL development packages. The binary links the machine's own ALSA, so build it on the machine that runs it.
 
 ## Configuration
 
@@ -169,6 +171,10 @@ Common port ID patterns:
 
 # Show level meters
 ./sessionmixer topology --meters
+
+# Add a launcher entry and icon for this binary to the Linux desktop, or remove them
+./sessionmixer desktop integrate
+./sessionmixer desktop remove
 ```
 
 ### UI Layout

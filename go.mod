@@ -6,8 +6,8 @@ require (
 	github.com/AllenDang/cimgui-go v1.6.0
 	github.com/charmbracelet/fang v0.4.4
 	github.com/michaelquigley/df v1.0.5
-	github.com/michaelquigley/dfx v0.1.7
-	github.com/michaelquigley/scarlettctl v0.0.0-20251222174232-47b12a907405
+	github.com/michaelquigley/dfx v0.1.14
+	github.com/michaelquigley/scarlettctl v0.0.0-20261009014048-5603f8ff94a7
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.10.1
 )
@@ -39,9 +39,4 @@ require (
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-
-replace (
-	github.com/michaelquigley/dfx => ../dfx
-	github.com/michaelquigley/scarlettctl => ../scarlettctl
 )

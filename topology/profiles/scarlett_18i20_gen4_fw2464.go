@@ -38,7 +38,7 @@ func NewScarlett18i20Gen4FW2464Profile(appFirmware, espFirmware topology.Firmwar
 }
 
 // buildLevelMeterMap populates the level meter index lookup table
-// Based on docs/18i20g4-2464-layout.md
+// Based on docs/current/18i20g4-2464-layout.md
 func (p *Scarlett18i20Gen4FW2464Profile) buildLevelMeterMap() {
 	// Analogue Inputs 1-9 -> meters [0-8]
 	for i := 1; i <= 9; i++ {
