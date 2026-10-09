@@ -11,7 +11,7 @@ The mixer is built and in daily use: device and cue mix configuration, stereo ga
 - Go, single module `github.com/michaelquigley/sessionmixer`.
 - cgo, through `scarlettctl`, against libasound (ALSA). The hardware is reached only through `scarlettctl.Card` and `scarlettctl.Control`.
 - `github.com/spf13/cobra` with `charmbracelet/fang` for the CLI. `github.com/michaelquigley/df/dl` for logging, `github.com/michaelquigley/df/dd` for configuration, `github.com/pkg/errors` for wrapping.
-- dfx (`github.com/michaelquigley/dfx`) for the ui, pinned at a tag; `scarlettctl` pinned at a commit.
+- dfx (`github.com/michaelquigley/dfx`) for the ui and `scarlettctl` for the hardware, both pinned at tags.
 - `go.mod` carries no `replace` directives. The module builds from published versions, because CI and patchbay (which imports `sessionmixer/topology`) consume it from GitHub. To develop dfx or scarlettctl in lockstep, use a `go.work` (ignored by git), and bump the pin once the dependency is tagged or pushed.
 
 ## Building
