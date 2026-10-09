@@ -164,7 +164,7 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 
 	// Separator after Output VU column (at paddingBeforeSep into the spacer)
 	sep1X := windowPos.X + leftPadding + vuWidth + paddingBeforeSep
-	drawList.AddLineV(
+	drawList.AddLineArgs(
 		imgui.Vec2{X: sep1X, Y: windowPos.Y},
 		imgui.Vec2{X: sep1X, Y: windowPos.Y + contentHeight - 20},
 		separatorColor,
@@ -173,7 +173,7 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 
 	// Separator after Controls column (at paddingBeforeSep into the spacer)
 	sep2X := windowPos.X + leftPadding + vuWidth + sectionPadding + controlsWidth + paddingBeforeSep
-	drawList.AddLineV(
+	drawList.AddLineArgs(
 		imgui.Vec2{X: sep2X, Y: windowPos.Y},
 		imgui.Vec2{X: sep2X, Y: windowPos.Y + contentHeight - 20},
 		separatorColor,

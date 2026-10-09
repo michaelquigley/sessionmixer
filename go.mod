@@ -3,7 +3,7 @@ module github.com/michaelquigley/sessionmixer
 go 1.25.4
 
 require (
-	github.com/AllenDang/cimgui-go v1.5.0
+	github.com/AllenDang/cimgui-go v1.6.0
 	github.com/charmbracelet/fang v0.4.4
 	github.com/michaelquigley/df v1.0.5
 	github.com/michaelquigley/dfx v0.1.7
@@ -37,7 +37,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
