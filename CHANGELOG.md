@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.1.0
+
 CHANGE: dfx is pinned at `v0.1.17`, which makes Faceplate the default style: Chakra Petch text, roomier spacing, and charcoal surfaces with a yellow accent.
 
 FIX: Under Faceplate, a cue mix's column labels share one baseline again; the device labels no longer sit lower than the output and Controls labels. The Controls column is centered between its separators, and the separators line up with the columns they divide.
