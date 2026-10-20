@@ -98,9 +98,18 @@ func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoot
 	return ui
 }
 
-// DrawControls renders the control buttons (MUTE, etc.) in a vertical stack.
+// DrawControls renders the control buttons (MUTE, etc.) in a vertical stack,
+// each centered in the column.
 func (ui *MasterUI) DrawControls(state *dfx.State) {
-	imgui.Text("Controls")
+	columnX := imgui.CursorPosX()
+	columnWidth := imgui.ContentRegionAvail().X
+	centerNext := func(width float32) {
+		imgui.SetCursorPosX(columnX + max(0, (columnWidth-width)/2))
+	}
+
+	label := "Controls"
+	centerNext(imgui.CalcTextSize(label).X)
+	imgui.Text(label)
 
 	imgui.Dummy(imgui.Vec2{X: 0, Y: 10})
 
@@ -133,7 +142,9 @@ func (ui *MasterUI) DrawControls(state *dfx.State) {
 	if muted {
 		buttonLabel = fonts.ICON_VOLUME_OFF
 	}
-	if imgui.ButtonV(fmt.Sprintf("%s##mute_%p", buttonLabel, ui), imgui.Vec2{X: 60, Y: 30}) {
+	buttonSize := imgui.Vec2{X: 60, Y: 30}
+	centerNext(buttonSize.X)
+	if imgui.ButtonV(fmt.Sprintf("%s##mute_%p", buttonLabel, ui), buttonSize) {
 		ui.cueMix.ToggleMute()
 	}
 
@@ -149,6 +160,12 @@ func (ui *MasterUI) DrawControls(state *dfx.State) {
 	imgui.PopStyleColorV(3)
 
 	// Future: Add more control buttons here (e.g., Solo, PFL, etc.)
+
+	// a framed widget ending the cell leaves its frame padding as the line's text
+	// baseline, which the table carries into every later cell of the row: the device
+	// fader labels would sit FramePadding.y below the labels before this column. a
+	// zero-size item with no baseline ends the cell at baseline zero.
+	imgui.Dummy(imgui.Vec2{})
 }
 
 // DrawOutputVU renders the output VU meters.

@@ -112,6 +112,11 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 	totalColumns := numFaders + 5
 	totalWidth := leftPadding + vuWidth + sectionPadding + controlsWidth + sectionPadding + totalFaderWidth + 50
 
+	// the separators below are placed by summing the declared column widths, which
+	// holds only if columns abut; style cell padding (8px a side under faceplate)
+	// would push every column right of its line.
+	imgui.PushStyleVarX(imgui.StyleVarCellPadding, 0)
+
 	// Create a table for layout (no borders - we'll draw our own)
 	if imgui.BeginTableV(fmt.Sprintf("##cuemix_table_%p", ui), int32(totalColumns), imgui.TableFlagsNone, imgui.Vec2{X: totalWidth, Y: 0}, 0) {
 		// Setup columns: left padding first
@@ -157,6 +162,7 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 
 		imgui.EndTable()
 	}
+	imgui.PopStyleVar()
 
 	// Draw vertical separator lines between sections
 	separatorColor := imgui.ColorU32Vec4(imgui.Vec4{X: 0.5, Y: 0.5, Z: 0.5, W: 0.5})
@@ -171,8 +177,9 @@ func (ui *CueMixUI) Draw(state *dfx.State) {
 		lineThickness,
 	)
 
-	// Separator after Controls column (at paddingBeforeSep into the spacer)
-	sep2X := windowPos.X + leftPadding + vuWidth + sectionPadding + controlsWidth + paddingBeforeSep
+	// Separator after Controls column (at paddingAfterSep into the spacer, mirroring
+	// the gap before the column, so the centered controls sit midway between lines)
+	sep2X := windowPos.X + leftPadding + vuWidth + sectionPadding + controlsWidth + paddingAfterSep
 	drawList.AddLineArgs(
 		imgui.Vec2{X: sep2X, Y: windowPos.Y},
 		imgui.Vec2{X: sep2X, Y: windowPos.Y + contentHeight - 20},
