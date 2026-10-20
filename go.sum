@@ -45,6 +45,8 @@ github.com/michaelquigley/dfx v0.1.14 h1:P1/xFYo5ObVDucndhQ2LpuwtElOGzJbM00YPBdu
 github.com/michaelquigley/dfx v0.1.14/go.mod h1:HeXZqMc9vu7bYiKHiLPTSWsLmEi73uhwUm4DUlfmj1w=
 github.com/michaelquigley/dfx v0.1.17 h1:V83hTGMBCezxUaIvKyOB4mOi1CGNG0GYuFe6T1Ml5XY=
 github.com/michaelquigley/dfx v0.1.17/go.mod h1:+NiDuBp833G5o4FQHYVqdzy072IqNEUj9Mr6QmqbF2o=
+github.com/michaelquigley/dfx v0.1.18 h1:XIGSG/4tW7A45GjHlYIADrU9zD1oKMHq0Z9Ml29XPlg=
+github.com/michaelquigley/dfx v0.1.18/go.mod h1:+NiDuBp833G5o4FQHYVqdzy072IqNEUj9Mr6QmqbF2o=
 github.com/michaelquigley/scarlettctl v0.1.0 h1:AMjs4QgYgX51lTwfdKWJdhaL7filcrYQQvjthM9m79I=
 github.com/michaelquigley/scarlettctl v0.1.0/go.mod h1:Sw3JpkMikmr2lsCMhWQ/r2vvp6txa4ntzkZ3m/R+dYI=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=

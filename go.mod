@@ -6,7 +6,7 @@ require (
 	github.com/AllenDang/cimgui-go v1.6.1
 	github.com/charmbracelet/fang v0.4.4
 	github.com/michaelquigley/df v1.0.5
-	github.com/michaelquigley/dfx v0.1.17
+	github.com/michaelquigley/dfx v0.1.18
 	github.com/michaelquigley/scarlettctl v0.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.10.1
