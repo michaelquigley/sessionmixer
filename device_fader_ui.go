@@ -33,6 +33,7 @@ type DeviceFaderUI struct {
 
 	// Level meter controls (cached from device ports)
 	levelControls []*scarlettctl.Control
+	levelIndices  []int
 
 	// Level smoothing buffers
 	levelBuffers []*RingBuffer[int64]
@@ -54,6 +55,7 @@ func NewDeviceFaderUI(fader *session.DeviceFader, state *topology.DeviceState, l
 	for _, port := range device.Ports {
 		if port.LevelMeterControl != nil {
 			ui.levelControls = append(ui.levelControls, port.LevelMeterControl)
+			ui.levelIndices = append(ui.levelIndices, port.LevelMeterIndex)
 		}
 	}
 
@@ -211,12 +213,8 @@ func (ui *DeviceFaderUI) getNormalizedLevels() []float32 {
 	}
 
 	levels := make([]float32, len(ui.levelControls))
-	for i, ctl := range ui.levelControls {
-		val, err := ctl.GetValue()
-		if err != nil {
-			levels[i] = 0
-			continue
-		}
+	for i, index := range ui.levelIndices {
+		val := ui.state.GetLevelMeter(index)
 
 		// Apply smoothing if enabled
 		if ui.levelBuffers != nil {
@@ -258,11 +256,8 @@ func (ui *DeviceFaderUI) getLevelColor() *imgui.Vec4 {
 
 	// Get max level across all controls
 	var maxLevel int64
-	for i, ctl := range ui.levelControls {
-		val, err := ctl.GetValue()
-		if err != nil {
-			continue
-		}
+	for i, index := range ui.levelIndices {
+		val := ui.state.GetLevelMeter(index)
 
 		if ui.levelBuffers != nil {
 			ui.levelBuffers[i].Push(val)

@@ -17,6 +17,7 @@ The mixer is built and in daily use: device and cue mix configuration, stereo ga
 ## Building
 
 - `make` installs, `make test` runs tests plus `go vet`, `make clean` clears the project GOBIN.
+- `make audition` builds the working tree in an Ubuntu 24.04 amd64 Podman container and packages it under `dist/`; `AUDITION_SOURCE` selects another checkout. `docs/current/audition-build.md` describes the workflow. `make clean` also removes `dist/`.
 - The machine needs `libasound2-dev`, and the X11 and OpenGL development packages dfx's GLFW backend links against.
 - `sessionmixer run` opens the window against the card named in `~/.config/sessionmixer/session.yaml` (`etc/example-config.yaml` is the shape). `sessionmixer topology` prints what the card exposes. Nothing in `go test` touches hardware.
 

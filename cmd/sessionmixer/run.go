@@ -123,6 +123,11 @@ func (cmd *runCommand) run(_ *cobra.Command, _ []string) error {
 
 	// Create mixer UI with saved waterfall states
 	mixer := sessionmixer.NewSessionMixer(sess, uiCfg.Waterfalls)
+	stopMetering, err := mixer.StartMetering()
+	if err != nil {
+		return errors.Wrap(err, "error starting level metering")
+	}
+	defer stopMetering()
 
 	// Start event monitor for hardware change notifications
 	faders := mixer.GetAllDeviceFaders()

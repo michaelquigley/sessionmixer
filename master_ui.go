@@ -31,6 +31,7 @@ type MasterUI struct {
 
 	// Level meter controls for mix outputs
 	levelControls []*scarlettctl.Control
+	levelIndices  []int
 
 	// Level smoothing buffers
 	levelBuffers []*RingBuffer[int64]
@@ -50,9 +51,11 @@ func NewMasterUI(cueMix *session.CueMix, state *topology.DeviceState, levelSmoot
 	// Collect level meter controls from mix outputs
 	if cueMix.MixL != nil && cueMix.MixL.OutputLevelMeterControl != nil {
 		ui.levelControls = append(ui.levelControls, cueMix.MixL.OutputLevelMeterControl)
+		ui.levelIndices = append(ui.levelIndices, cueMix.MixL.OutputLevelMeterIndex)
 	}
 	if cueMix.MixR != nil && cueMix.MixR.OutputLevelMeterControl != nil {
 		ui.levelControls = append(ui.levelControls, cueMix.MixR.OutputLevelMeterControl)
+		ui.levelIndices = append(ui.levelIndices, cueMix.MixR.OutputLevelMeterIndex)
 	}
 
 	// Get level range from first control
@@ -262,12 +265,8 @@ func (ui *MasterUI) getNormalizedLevels() []float32 {
 	}
 
 	levels := make([]float32, len(ui.levelControls))
-	for i, ctl := range ui.levelControls {
-		val, err := ctl.GetValue()
-		if err != nil {
-			levels[i] = 0
-			continue
-		}
+	for i, index := range ui.levelIndices {
+		val := ui.state.GetLevelMeter(index)
 
 		// Apply smoothing if enabled
 		if ui.levelBuffers != nil {

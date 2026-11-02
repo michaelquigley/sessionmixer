@@ -64,7 +64,7 @@ make
 sessionmixer desktop integrate
 ```
 
-Building needs `libasound2-dev` and the X11 and OpenGL development packages. The binary links the machine's own ALSA, so build it on the machine that runs it.
+Building needs `libasound2-dev` and the X11 and OpenGL development packages. The binary links the build machine's native libraries. For an Ubuntu 24.04 amd64 studio build from the current working tree, use `make audition`; it builds in Podman and writes a portable archive under `dist/`. See [audition builds](docs/current/audition-build.md) for requirements, installation, and baseline comparisons.
 
 ## Configuration
 

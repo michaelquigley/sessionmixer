@@ -33,6 +33,8 @@ Mute is routing. `CueMix.SetMuted(true)` saves each output's current source, rou
 
 ## Metering
 
+One background sampler targets 30 Hz and reads each configured input or mix-output meter once per pass, even when the same input appears in several cue mixes. It uses its own ALSA connection and publishes to `DeviceState`'s atomic level cache; drawing reads that cache, so resize refreshes never wait for metering I/O. The sampler continues while cue mixes are collapsed. `run` starts it before opening the window and joins it before closing the metering connection on shutdown. An unreadable meter publishes zero.
+
 Level meters use a 96 dB range with a green-to-yellow-to-red HSV gradient, optionally smoothed through a ring buffer (`level_smoothing` samples; 0 disables). The VU meters run in highres mode with 1px segments and 1px gaps.
 
 Clicking a channel title (a device name or an output label) toggles a VU waterfall beside the meter: level history scrolling upward, newest at the bottom. It samples on a 16 ms interval so scroll speed is independent of frame rate, draws 1px rows with alternating opacity for a scanline effect, keeps 300 samples per device fader (303 for the master), and widens the column while shown. Which waterfalls are open is saved with the window state in `~/.config/sessionmixer/ui.json`.
