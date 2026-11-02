@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.1.1
+
 FEATURE: `make audition` packages the working tree for Ubuntu 24.04 amd64 studio machines using a Podman build, with source identification and an executable-load check. `AUDITION_SOURCE` selects a separate checkout for baseline comparisons.
 
 FIX: Window resizing no longer waits for level-meter hardware reads. Meters share a background sampler across cue mixes, and redraws use cached levels.
